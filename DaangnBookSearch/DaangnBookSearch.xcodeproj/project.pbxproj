@@ -37,6 +37,34 @@
 			);
 			target = 653256B62EAFAC09005F43AA /* DaangnBookSearch */;
 		};
+		65325D5D2EB28788005F43AA /* Exceptions for "DaangnBookSearch" folder in "DaangnBookSearchTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Data/Network/Core/HTTPMethod.swift,
+				Data/Network/Core/NetworkProvider.swift,
+				Data/Network/Core/NetworkTarget.swift,
+				Domain/Entity/BookDetail.swift,
+				Domain/Entity/BookSummary.swift,
+				Domain/Repository/BookRepository.swift,
+				Domain/UseCase/FetchBookDetailUseCase.swift,
+				Domain/UseCase/SearchBooksUseCase.swift,
+			);
+			target = 653256CC2EAFAC0B005F43AA /* DaangnBookSearchTests */;
+		};
+		65325D5E2EB28788005F43AA /* Exceptions for "DaangnBookSearch" folder in "DaangnBookSearchUITests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Data/Network/Core/HTTPMethod.swift,
+				Data/Network/Core/NetworkProvider.swift,
+				Data/Network/Core/NetworkTarget.swift,
+				Domain/Entity/BookDetail.swift,
+				Domain/Entity/BookSummary.swift,
+				Domain/Repository/BookRepository.swift,
+				Domain/UseCase/FetchBookDetailUseCase.swift,
+				Domain/UseCase/SearchBooksUseCase.swift,
+			);
+			target = 653256D62EAFAC0B005F43AA /* DaangnBookSearchUITests */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -44,6 +72,8 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				653256DF2EAFAC0B005F43AA /* Exceptions for "DaangnBookSearch" folder in "DaangnBookSearch" target */,
+				65325D5D2EB28788005F43AA /* Exceptions for "DaangnBookSearch" folder in "DaangnBookSearchTests" target */,
+				65325D5E2EB28788005F43AA /* Exceptions for "DaangnBookSearch" folder in "DaangnBookSearchUITests" target */,
 			);
 			path = DaangnBookSearch;
 			sourceTree = "<group>";
