@@ -9,7 +9,11 @@ import Foundation
 
 struct SearchBooksUseCase {
     let repo: BookRepository
-    func callAsFunction(query: String, page: Int) async throws -> (items: [BookSummary], total: Int, page: Int) {
+
+    func callAsFunction(
+        query: String,
+        page: Int
+    ) async throws -> (items: [BookSummary], total: Int, page: Int) {
         try await repo.search(query: query, page: page)
     }
 }
