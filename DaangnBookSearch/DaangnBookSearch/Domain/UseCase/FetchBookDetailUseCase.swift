@@ -9,6 +9,7 @@ import Foundation
 
 struct FetchBookDetailUseCase {
     let repo: BookRepository
+
     func callAsFunction(isbn13: String) async throws -> BookDetail {
         try await repo.detail(isbn13: isbn13)
     }
