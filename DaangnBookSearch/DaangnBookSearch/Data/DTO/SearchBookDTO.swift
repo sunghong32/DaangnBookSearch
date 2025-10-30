@@ -19,11 +19,12 @@ struct SearchBookDTO: Decodable {
 extension SearchBookDTO {
     func toDomain() -> BookSummary {
         return BookSummary(
-            isbn13: isbn13,
             title: title,
             subtitle: subtitle,
+            isbn13: isbn13,
+            price: price,
             imageURL: URL(string: image),
-            priceText: price
+            url: URL(string: url)
         )
     }
 }

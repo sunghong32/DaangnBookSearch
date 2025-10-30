@@ -15,20 +15,20 @@ final class BookNetworkRepository: BookRepository {
         self.provider = provider
     }
 
-    // 검색
     func search(
         query: String,
         page: Int
     ) async throws -> (items: [BookSummary], total: Int, page: Int) {
-
         let target = ItBookStoreTarget.search(query: query, page: page)
-        let dto: SearchResponseDTO = try await provider.request(target)
+        let dto: SearchResponseDTO = try await provider.request(target, as: SearchResponseDTO.self)
         return dto.toDomain()
     }
 
-    func detail(isbn13: String) async throws -> BookDetail {
+    func detail(
+        isbn13: String
+    ) async throws -> BookDetail {
         let target = ItBookStoreTarget.detail(isbn13: isbn13)
-        let dto: BookDetailDTO = try await provider.request(target) 
+        let dto: BookDetailDTO = try await provider.request(target, as: BookDetailDTO.self)
         return dto.toDomain()
     }
 }
