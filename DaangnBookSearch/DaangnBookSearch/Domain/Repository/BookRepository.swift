@@ -8,6 +8,10 @@
 import Foundation
 
 protocol BookRepository {
-    func search(query: String, page: Int) async throws -> (items: [BookSummary], total: Int, page: Int)
+    func search(
+        query: String,
+        page: Int
+    ) async throws -> (items: [BookSummary], total: Int, page: Int)
+    
     func detail(isbn13: String) async throws -> BookDetail
 }
