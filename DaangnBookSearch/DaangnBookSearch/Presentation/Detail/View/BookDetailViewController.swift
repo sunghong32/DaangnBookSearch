@@ -1,17 +1,17 @@
 //
-//  SearchViewController.swift
+//  BookDetailViewController.swift
 //  DaangnBookSearch
 //
-//  Created by 민성홍 on 10/30/25.
+//  Created by 민성홍 on 10/27/25.
 //
 
 import UIKit
 
-final class SearchViewController: UIViewController {
+final class BookDetailViewController: UIViewController {
 
-    private let viewModel: SearchViewModel
+    private let viewModel: BookDetailViewModel
 
-    init(viewModel: SearchViewModel) {
+    init(viewModel: BookDetailViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
@@ -23,12 +23,12 @@ final class SearchViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Search Books"
+        title = "Book Detail"
         view.backgroundColor = .systemBackground
 
         // 임시 UI (빌드 확인용)
         let label = UILabel()
-        label.text = "Search Screen"
+        label.text = "Book Detail Screen"
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(label)

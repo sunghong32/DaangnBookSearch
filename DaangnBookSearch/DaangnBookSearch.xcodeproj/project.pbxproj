@@ -53,6 +53,7 @@
 				Domain/Repository/BookRepository.swift,
 				Domain/UseCase/FetchBookDetailUseCase.swift,
 				Domain/UseCase/SearchBooksUseCase.swift,
+				Presentation/Detail/ViewModel/BookDetailViewModel.swift,
 				Presentation/Search/View/SearchViewController.swift,
 				Presentation/Search/ViewModel/SearchViewModel.swift,
 			);
@@ -74,6 +75,7 @@
 				Domain/Repository/BookRepository.swift,
 				Domain/UseCase/FetchBookDetailUseCase.swift,
 				Domain/UseCase/SearchBooksUseCase.swift,
+				Presentation/Detail/ViewModel/BookDetailViewModel.swift,
 				Presentation/Search/View/SearchViewController.swift,
 				Presentation/Search/ViewModel/SearchViewModel.swift,
 			);
