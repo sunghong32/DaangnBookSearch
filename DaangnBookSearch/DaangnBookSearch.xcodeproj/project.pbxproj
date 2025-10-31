@@ -54,7 +54,6 @@
 				Domain/UseCase/FetchBookDetailUseCase.swift,
 				Domain/UseCase/SearchBooksUseCase.swift,
 				Presentation/Detail/ViewModel/BookDetailViewModel.swift,
-				Presentation/Search/View/SearchViewController.swift,
 				Presentation/Search/ViewModel/SearchViewModel.swift,
 			);
 			target = 653256CC2EAFAC0B005F43AA /* DaangnBookSearchTests */;
@@ -76,7 +75,6 @@
 				Domain/UseCase/FetchBookDetailUseCase.swift,
 				Domain/UseCase/SearchBooksUseCase.swift,
 				Presentation/Detail/ViewModel/BookDetailViewModel.swift,
-				Presentation/Search/View/SearchViewController.swift,
 				Presentation/Search/ViewModel/SearchViewModel.swift,
 			);
 			target = 653256D62EAFAC0B005F43AA /* DaangnBookSearchUITests */;
@@ -338,9 +336,10 @@
 				DEVELOPMENT_TEAM = B434W34DLF;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DaangnBookSearch/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "당근북파인더";
+				INFOPLIST_KEY_CFBundleDisplayName = "당근책방";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = "";
 				INFOPLIST_KEY_UIStatusBarStyle = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -376,9 +375,10 @@
 				DEVELOPMENT_TEAM = B434W34DLF;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DaangnBookSearch/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "당근북파인더";
+				INFOPLIST_KEY_CFBundleDisplayName = "당근책방";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = "";
 				INFOPLIST_KEY_UIStatusBarStyle = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
