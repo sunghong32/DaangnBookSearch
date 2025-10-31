@@ -53,7 +53,8 @@
 				Domain/Repository/BookRepository.swift,
 				Domain/UseCase/FetchBookDetailUseCase.swift,
 				Domain/UseCase/SearchBooksUseCase.swift,
-				Presentation/SearchViewController.swift,
+				Presentation/Search/View/SearchViewController.swift,
+				Presentation/Search/ViewModel/SearchViewModel.swift,
 			);
 			target = 653256CC2EAFAC0B005F43AA /* DaangnBookSearchTests */;
 		};
@@ -73,7 +74,8 @@
 				Domain/Repository/BookRepository.swift,
 				Domain/UseCase/FetchBookDetailUseCase.swift,
 				Domain/UseCase/SearchBooksUseCase.swift,
-				Presentation/SearchViewController.swift,
+				Presentation/Search/View/SearchViewController.swift,
+				Presentation/Search/ViewModel/SearchViewModel.swift,
 			);
 			target = 653256D62EAFAC0B005F43AA /* DaangnBookSearchUITests */;
 		};
