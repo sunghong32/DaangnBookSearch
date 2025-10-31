@@ -19,7 +19,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = scene as? UIWindowScene else { return }
 
         let window = UIWindow(windowScene: windowScene)
-        let rootViewController = UINavigationController(rootViewController: SearchViewController())
+        let provider = NetworkProvider()
+        let bookNetworkRepository = BookNetworkRepository(provider: provider)
+        let searchBooksUseCase = SearchBooksUseCase(repo: bookNetworkRepository)
+        let viewModel = SearchViewModel(searchBooksUseCase: searchBooksUseCase)
+        let rootViewController = UINavigationController(rootViewController: SearchViewController(viewModel: viewModel))
         window.rootViewController = rootViewController
         window.makeKeyAndVisible()
         self.window = window
