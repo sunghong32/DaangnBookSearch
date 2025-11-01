@@ -123,6 +123,72 @@ final class SearchView: UIView {
         cv.keyboardDismissMode = .onDrag
         return cv
     }()
+    
+    let historyDropdownView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .white
+        view.layer.cornerRadius = 15
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.daangnGray200.cgColor
+        view.layer.shadowColor = UIColor.black.withAlphaComponent(0.08).cgColor
+        view.layer.shadowOpacity = 1
+        view.layer.shadowRadius = 10
+        view.layer.shadowOffset = CGSize(width: 0, height: 4)
+        view.isHidden = true
+        return view
+    }()
+
+    private let historyHeaderIconView: UIImageView = {
+        let imageView = UIImageView(image: UIImage(systemName: "clock"))
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = .daangnGray400
+        NSLayoutConstraint.activate([
+            imageView.widthAnchor.constraint(equalToConstant: 16),
+            imageView.heightAnchor.constraint(equalToConstant: 16)
+        ])
+        return imageView
+    }()
+
+    private let historyHeaderLabel: UILabel = {
+        let label = UILabel()
+        label.text = "최근 검색"
+        label.font = .daangnListSubtitle()
+        label.textColor = .daangnGray600
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    let historyClearButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("지우기", for: .normal)
+        button.setTitleColor(.daangnGray400, for: .normal)
+        button.titleLabel?.font = .daangnListSubtitle()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.isHidden = true
+        return button
+    }()
+
+    let historyDropdownCollectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .vertical
+        layout.minimumLineSpacing = 0
+        layout.sectionInset = .zero
+        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        cv.translatesAutoresizingMaskIntoConstraints = false
+        cv.backgroundColor = .clear
+        cv.isScrollEnabled = false
+        return cv
+    }()
+
+    private var historyDropdownHeightConstraint: NSLayoutConstraint?
+    private let historyHeaderDivider: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .daangnGray200
+        return view
+    }()
 
     private let loadingOverlayView: UIView = {
         let view = UIView()
@@ -181,6 +247,7 @@ final class SearchView: UIView {
     private func setupLayout() {
         addSubview(headerContainerView)
         addSubview(collectionView)
+        addSubview(historyDropdownView)
         addSubview(initialPlaceholderStackView)
         addSubview(emptyResultLabel)
         addSubview(loadingOverlayView)
@@ -190,6 +257,15 @@ final class SearchView: UIView {
         headerContainerView.addSubview(searchContainerView)
         headerContainerView.addSubview(searchButton)
         searchContainerView.addSubview(queryTextField)
+
+        let historyHeaderContainer = UIView()
+        historyHeaderContainer.translatesAutoresizingMaskIntoConstraints = false
+        historyDropdownView.addSubview(historyHeaderContainer)
+        historyHeaderContainer.addSubview(historyHeaderIconView)
+        historyHeaderContainer.addSubview(historyHeaderLabel)
+        historyHeaderContainer.addSubview(historyClearButton)
+        historyDropdownView.addSubview(historyHeaderDivider)
+        historyDropdownView.addSubview(historyDropdownCollectionView)
 
         NSLayoutConstraint.activate([
             headerContainerView.topAnchor.constraint(equalTo: topAnchor),
@@ -215,7 +291,35 @@ final class SearchView: UIView {
 
             headerContainerView.bottomAnchor.constraint(equalTo: searchButton.bottomAnchor, constant: 26),
 
-            collectionView.topAnchor.constraint(equalTo: headerContainerView.bottomAnchor),
+            historyDropdownView.topAnchor.constraint(equalTo: searchContainerView.bottomAnchor, constant: 8),
+            historyDropdownView.leadingAnchor.constraint(equalTo: searchContainerView.leadingAnchor),
+            historyDropdownView.trailingAnchor.constraint(equalTo: searchContainerView.trailingAnchor),
+
+            historyHeaderContainer.topAnchor.constraint(equalTo: historyDropdownView.topAnchor, constant: 12),
+            historyHeaderContainer.leadingAnchor.constraint(equalTo: historyDropdownView.leadingAnchor, constant: 16),
+            historyHeaderContainer.trailingAnchor.constraint(equalTo: historyDropdownView.trailingAnchor, constant: -16),
+            historyHeaderContainer.heightAnchor.constraint(equalToConstant: 22),
+
+            historyHeaderIconView.leadingAnchor.constraint(equalTo: historyHeaderContainer.leadingAnchor),
+            historyHeaderIconView.centerYAnchor.constraint(equalTo: historyHeaderContainer.centerYAnchor),
+
+            historyHeaderLabel.leadingAnchor.constraint(equalTo: historyHeaderIconView.trailingAnchor, constant: 8),
+            historyHeaderLabel.centerYAnchor.constraint(equalTo: historyHeaderContainer.centerYAnchor),
+
+            historyClearButton.centerYAnchor.constraint(equalTo: historyHeaderContainer.centerYAnchor),
+            historyClearButton.trailingAnchor.constraint(equalTo: historyHeaderContainer.trailingAnchor),
+
+            historyHeaderDivider.topAnchor.constraint(equalTo: historyHeaderContainer.bottomAnchor, constant: 12),
+            historyHeaderDivider.leadingAnchor.constraint(equalTo: historyDropdownView.leadingAnchor, constant: 16),
+            historyHeaderDivider.trailingAnchor.constraint(equalTo: historyDropdownView.trailingAnchor, constant: -16),
+            historyHeaderDivider.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
+
+            historyDropdownCollectionView.topAnchor.constraint(equalTo: historyHeaderDivider.bottomAnchor, constant: 12),
+            historyDropdownCollectionView.leadingAnchor.constraint(equalTo: historyDropdownView.leadingAnchor),
+            historyDropdownCollectionView.trailingAnchor.constraint(equalTo: historyDropdownView.trailingAnchor),
+            historyDropdownCollectionView.bottomAnchor.constraint(equalTo: historyDropdownView.bottomAnchor, constant: -12),
+
+            collectionView.topAnchor.constraint(equalTo: headerContainerView.bottomAnchor, constant: 8),
             collectionView.leadingAnchor.constraint(equalTo: leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: bottomAnchor),
@@ -236,6 +340,9 @@ final class SearchView: UIView {
         ])
 
         collectionView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 24, right: 0)
+        historyDropdownHeightConstraint = historyDropdownView.heightAnchor.constraint(equalToConstant: 0)
+        historyDropdownHeightConstraint?.isActive = true
+        bringSubviewToFront(historyDropdownView)
     }
 
     // MARK: - Helpers
@@ -273,6 +380,19 @@ final class SearchView: UIView {
         if queryTextField.text != text {
             queryTextField.text = text
         }
+    }
+
+    func setHistoryDropdownVisible(_ visible: Bool) {
+        historyDropdownView.isHidden = !visible
+    }
+
+    func updateHistoryDropdownHeight(itemCount: Int) {
+        let headerHeight: CGFloat = 46
+        let rowHeight: CGFloat = 51
+        let visibleRows = min(max(itemCount, 0), 5)
+        let totalHeight = itemCount == 0 ? 0 : headerHeight + CGFloat(visibleRows) * rowHeight + 12
+        historyDropdownHeightConstraint?.constant = totalHeight
+        historyDropdownCollectionView.isScrollEnabled = itemCount > 5
     }
 }
 

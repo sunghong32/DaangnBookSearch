@@ -16,6 +16,7 @@ final class SearchViewController: UIViewController {
     private var currentState = SearchViewModel.State()
     private var previousErrorMessage: String?
     private var hasPerformedSearch = false
+    private var histories: [String] = SearchHistoryStore.shared.loadHistories()
 
     init(viewModel: SearchViewModel) {
         self.viewModel = viewModel
@@ -37,6 +38,8 @@ final class SearchViewController: UIViewController {
         configureCollectionView()
         configureInputs()
         observeViewModel()
+        renderHistoryVisibility()
+        customView.historyDropdownCollectionView.reloadData()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -61,12 +64,22 @@ final class SearchViewController: UIViewController {
             forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter,
             withReuseIdentifier: LoadingFooterView.identifier
         )
+
+        customView.historyDropdownCollectionView.delegate = self
+        customView.historyDropdownCollectionView.dataSource = self
+        customView.historyDropdownCollectionView.register(
+            SearchHistoryDropdownCell.self,
+            forCellWithReuseIdentifier: SearchHistoryDropdownCell.identifier
+        )
     }
 
     private func configureInputs() {
         customView.queryTextField.delegate = self
         customView.queryTextField.addTarget(self, action: #selector(handleTextFieldChange(_:)), for: .editingChanged)
         customView.searchButton.addTarget(self, action: #selector(handleSearchButtonTap), for: .touchUpInside)
+        customView.historyClearButton.addTarget(self, action: #selector(handleHistoryClearTap), for: .touchUpInside)
+        customView.queryTextField.addTarget(self, action: #selector(handleTextFieldEditingDidBegin(_:)), for: .editingDidBegin)
+        customView.queryTextField.addTarget(self, action: #selector(handleTextFieldEditingDidEnd(_:)), for: .editingDidEnd)
     }
 
     private func observeViewModel() {
@@ -79,6 +92,7 @@ final class SearchViewController: UIViewController {
                 self.customView.setLoadingOverlayVisible(isInitialLoading)
                 self.renderPlaceholders(for: state)
                 self.customView.collectionView.reloadData()
+                self.customView.historyDropdownCollectionView.reloadData()
                 self.handleErrorIfNeeded(message: state.errorMessage)
             }
         }
@@ -87,10 +101,8 @@ final class SearchViewController: UIViewController {
     @objc
     private func handleTextFieldChange(_ textField: UITextField) {
         viewModel.send(.updateQuery(textField.text ?? ""))
-        if (textField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            hasPerformedSearch = false
-            renderPlaceholders(for: currentState)
-        }
+        renderPlaceholders(for: currentState)
+        renderHistoryVisibility()
     }
 
     @objc
@@ -98,6 +110,26 @@ final class SearchViewController: UIViewController {
         hasPerformedSearch = true
         customView.queryTextField.resignFirstResponder()
         viewModel.send(.search)
+        storeHistoryIfNeeded()
+    }
+    
+    @objc
+    private func handleHistoryClearTap() {
+        SearchHistoryStore.shared.clear()
+        histories = []
+        renderHistoryVisibility()
+        customView.historyDropdownCollectionView.reloadData()
+    }
+
+    @objc
+    private func handleTextFieldEditingDidBegin(_ textField: UITextField) {
+        renderHistoryVisibility()
+    }
+
+    @objc
+    private func handleTextFieldEditingDidEnd(_ textField: UITextField) {
+        customView.setHistoryDropdownVisible(false)
+        customView.updateHistoryDropdownHeight(itemCount: 0)
     }
 }
 
@@ -109,6 +141,10 @@ extension SearchViewController: UICollectionViewDelegateFlowLayout {
         layout collectionViewLayout: UICollectionViewLayout,
         sizeForItemAt indexPath: IndexPath
     ) -> CGSize {
+        if collectionView === customView.historyDropdownCollectionView {
+            let width = collectionView.bounds.width
+            return CGSize(width: width, height: 51)
+        }
         let width = collectionView.bounds.width - 32
         return CGSize(width: width, height: 155)
     }
@@ -116,8 +152,20 @@ extension SearchViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(
         _ collectionView: UICollectionView,
         layout collectionViewLayout: UICollectionViewLayout,
+        minimumLineSpacingForSectionAt section: Int
+    ) -> CGFloat {
+        if collectionView === customView.historyDropdownCollectionView {
+            return 0
+        }
+        return 16
+    }
+
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
         referenceSizeForFooterInSection section: Int
     ) -> CGSize {
+        guard collectionView === customView.collectionView else { return .zero }
         guard currentState.isLoadingMore else { return .zero }
         return CGSize(width: collectionView.bounds.width, height: 60)
     }
@@ -130,19 +178,32 @@ extension SearchViewController: UICollectionViewDataSource {
         _ collectionView: UICollectionView,
         numberOfItemsInSection section: Int
     ) -> Int {
-        currentState.books.count
+        if collectionView === customView.historyDropdownCollectionView {
+            return histories.count
+        }
+        return currentState.books.count
     }
 
     func collectionView(
         _ collectionView: UICollectionView,
         cellForItemAt indexPath: IndexPath
     ) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: BookCell.identifier,
-            for: indexPath
-        ) as! BookCell
-        cell.configure(with: currentState.books[indexPath.item])
-        return cell
+        if collectionView === customView.historyDropdownCollectionView {
+            let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: SearchHistoryDropdownCell.identifier,
+                for: indexPath
+            ) as! SearchHistoryDropdownCell
+            let text = histories[indexPath.item]
+            cell.configure(with: text)
+            return cell
+        } else {
+            let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: BookCell.identifier,
+                for: indexPath
+            ) as! BookCell
+            cell.configure(with: currentState.books[indexPath.item])
+            return cell
+        }
     }
 
     func collectionView(
@@ -150,6 +211,9 @@ extension SearchViewController: UICollectionViewDataSource {
         viewForSupplementaryElementOfKind kind: String,
         at indexPath: IndexPath
     ) -> UICollectionReusableView {
+        guard collectionView === customView.collectionView else {
+            return UICollectionReusableView()
+        }
         if kind == UICollectionView.elementKindSectionFooter {
             let footer = collectionView.dequeueReusableSupplementaryView(
                 ofKind: kind,
@@ -170,8 +234,19 @@ extension SearchViewController: UICollectionViewDelegate {
         _ collectionView: UICollectionView,
         didSelectItemAt indexPath: IndexPath
     ) {
-        let book = currentState.books[indexPath.item]
-        print("Selected: \(book.title)")
+        if collectionView === customView.historyDropdownCollectionView {
+            let history = histories[indexPath.item]
+            customView.queryTextField.text = history
+            hasPerformedSearch = true
+            customView.queryTextField.resignFirstResponder()
+            renderHistoryVisibility()
+            viewModel.send(.updateQuery(history))
+            viewModel.send(.search)
+            storeHistoryIfNeeded()
+        } else {
+            let book = currentState.books[indexPath.item]
+            print("Selected: \(book.title)")
+        }
     }
 
     func collectionView(
@@ -179,6 +254,7 @@ extension SearchViewController: UICollectionViewDelegate {
         willDisplay cell: UICollectionViewCell,
         forItemAt indexPath: IndexPath
     ) {
+        guard collectionView === customView.collectionView else { return }
         let threshold = currentState.books.count - 5
         if threshold >= 0, indexPath.item == threshold {
             viewModel.send(.loadMore)
@@ -193,6 +269,7 @@ extension SearchViewController: UITextFieldDelegate {
         textField.resignFirstResponder()
         hasPerformedSearch = true
         viewModel.send(.search)
+        storeHistoryIfNeeded()
         return true
     }
 }
@@ -225,6 +302,8 @@ private extension SearchViewController {
             customView.showInitialPlaceholder()
             customView.setCollectionViewVisible(false)
         }
+
+        renderHistoryVisibility()
     }
 
     func handleErrorIfNeeded(message: String?) {
@@ -240,5 +319,30 @@ private extension SearchViewController {
         if presentedViewController == nil {
             present(alert, animated: true)
         }
+    }
+
+    func renderHistoryVisibility() {
+        let trimmed = (customView.queryTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let shouldShow = customView.queryTextField.isFirstResponder && trimmed.isEmpty && !histories.isEmpty
+        customView.setHistoryDropdownVisible(shouldShow)
+        let itemCount = shouldShow ? histories.count : 0
+        customView.updateHistoryDropdownHeight(itemCount: itemCount)
+        if shouldShow {
+            customView.hidePlaceholders()
+        }
+        if shouldShow {
+            customView.historyDropdownCollectionView.reloadData()
+        }
+        customView.historyClearButton.isHidden = histories.isEmpty
+    }
+
+    func storeHistoryIfNeeded() {
+        let text = (customView.queryTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+
+        SearchHistoryStore.shared.addHistory(text)
+        histories = SearchHistoryStore.shared.loadHistories()
+        renderHistoryVisibility()
+        customView.historyDropdownCollectionView.reloadData()
     }
 }
