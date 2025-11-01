@@ -47,6 +47,8 @@ final class SearchViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        viewModel.send(.refreshFavorites)
+        customView.collectionView.reloadData()
     }
 
     override func viewWillDisappear(_ animated: Bool) {

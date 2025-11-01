@@ -21,28 +21,10 @@ final class BookshelfViewModel {
     private let bookshelfStore: BookshelfStore
     private(set) var state = State()
     private var stateChangeHandler: ((State) -> Void)?
-    private var bookshelfObserver: NSObjectProtocol?
-
-    deinit {
-        if let observer = bookshelfObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-    }
 
     init(bookshelfStore: BookshelfStore) {
         self.bookshelfStore = bookshelfStore
         state.books = bookshelfStore.currentBooks
-        bookshelfObserver = NotificationCenter.default.addObserver(
-            forName: .bookshelfDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self else { return }
-            let books = (notification.userInfo?["books"] as? [BookSummary]) ?? self.bookshelfStore.currentBooks
-            self.mutateState { state in
-                state.books = books
-            }
-        }
     }
 
     func setStateChangeHandler(_ handler: @escaping (State) -> Void) {
@@ -58,6 +40,9 @@ final class BookshelfViewModel {
 
         case let .remove(book):
             bookshelfStore.remove(isbn13: book.isbn13)
+            mutateState { state in
+                state.books = bookshelfStore.currentBooks
+            }
         }
     }
 

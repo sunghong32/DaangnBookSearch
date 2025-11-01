@@ -16,7 +16,6 @@ final class BookDetailViewController: UIViewController {
     private var currentDetail: BookDetail?
     private var isFavorite = false
     private var lastErrorMessage: String?
-    private var bookshelfObserver: NSObjectProtocol?
 
     private var detailView: BookDetailView { view as! BookDetailView }
 
@@ -30,12 +29,6 @@ final class BookDetailViewController: UIViewController {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    deinit {
-        if let observer = bookshelfObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
     }
 
     override func loadView() {
@@ -52,12 +45,12 @@ final class BookDetailViewController: UIViewController {
         }
         render(state: viewModel.state)
         viewModel.send(.load)
-        syncFavoriteStateWithStore()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        syncFavoriteStateWithStore()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -76,14 +69,6 @@ final class BookDetailViewController: UIViewController {
 
         detailView.onBackButtonTap = { [weak self] in
             self?.handleBackButtonTapped()
-        }
-
-        bookshelfObserver = NotificationCenter.default.addObserver(
-            forName: .bookshelfDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.syncFavoriteStateWithStore()
         }
 
         viewModel.setStateChangeHandler { [weak self] state in

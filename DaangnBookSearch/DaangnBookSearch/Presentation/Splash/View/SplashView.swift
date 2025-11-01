@@ -19,8 +19,8 @@ final class SplashView: UIView {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.text = "당근책방"
-        label.textColor = UIColor(red: 1.0, green: 0.44, blue: 0.06, alpha: 1.0) // #ff6f0f
-        label.font = UIFont.systemFont(ofSize: 34, weight: .regular)
+        label.textColor = .daangnOrange
+        label.font = .daangnSplashTitle()
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()

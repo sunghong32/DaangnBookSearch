@@ -41,14 +41,13 @@ final class BookDetailView: UIView {
     private let backButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setImage(UIImage(named: "BackOrange")?.withRenderingMode(.alwaysOriginal), for: .normal)
         button.setTitle("뒤로", for: .normal)
         button.setTitleColor(.daangnOrange, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
+        button.titleLabel?.font = .daangnNavAction()
         button.tintColor = .daangnOrange
         button.contentHorizontalAlignment = .leading
-        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: -4, bottom: 0, right: 0)
-        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: -8, bottom: 0, right: 0)
+        button.setImage(UIImage(named: "BackOrange")?.withRenderingMode(.alwaysOriginal), for: .normal)
+        button.setTitle("  뒤로", for: .normal)
         return button
     }()
 
@@ -120,7 +119,7 @@ final class BookDetailView: UIView {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 21, weight: .semibold)
+        label.font = .daangnDetailHeadline()
         label.textColor = .daangnGray900
         label.numberOfLines = 0
         return label
@@ -140,14 +139,16 @@ final class BookDetailView: UIView {
         button.layer.cornerRadius = 15
         button.layer.borderWidth = 1
         button.layer.borderColor = UIColor.daangnOrange.cgColor
-        button.setTitle("내 책장에 담기", for: .normal)
-        button.setTitleColor(.daangnOrange, for: .normal)
         button.titleLabel?.font = .daangnButton()
-        button.contentEdgeInsets = UIEdgeInsets(top: 12, left: 20, bottom: 12, right: 20)
-        button.tintColor = .daangnOrange
-        button.setImage(UIImage(named: "EmptyHeart")?.withRenderingMode(.alwaysTemplate), for: .normal)
-        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: -4, bottom: 0, right: 4)
-        button.semanticContentAttribute = .forceLeftToRight
+        var config = UIButton.Configuration.filled()
+        config.baseBackgroundColor = .clear
+        config.baseForegroundColor = .daangnOrange
+        config.image = UIImage(named: "EmptyHeart")?.withRenderingMode(.alwaysTemplate)
+        config.imagePadding = 6
+        config.imagePlacement = .leading
+        config.attributedTitle = AttributedString("내 책장에 담기", attributes: .init([.font: UIFont.daangnButton()]))
+        config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20)
+        button.configuration = config
         button.heightAnchor.constraint(equalToConstant: 46).isActive = true
         return button
     }()
@@ -169,7 +170,7 @@ final class BookDetailView: UIView {
 
     private let priceLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 25.5, weight: .medium)
+        label.font = .daangnDetailPriceLarge()
         label.textColor = .daangnOrange
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -198,7 +199,7 @@ final class BookDetailView: UIView {
 
     private let descriptionTitleLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 19, weight: .medium)
+        label.font = .daangnSectionTitle()
         label.textColor = .daangnGray900
         label.text = "책 소개"
         return label
@@ -207,7 +208,7 @@ final class BookDetailView: UIView {
     private let descriptionLabel: UILabel = {
         let label = UILabel()
         label.font = .daangnListSubtitle()
-        label.textColor = UIColor(hex: 0x364153)
+        label.textColor = .daangnGray700
         label.numberOfLines = 0
         return label
     }()
@@ -223,7 +224,7 @@ final class BookDetailView: UIView {
 
     private let pdfTitleLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 19, weight: .medium)
+        label.font = .daangnSectionTitle()
         label.textColor = .daangnGray900
         label.text = "PDF 보기"
         return label
@@ -245,7 +246,32 @@ final class BookDetailView: UIView {
         return view
     }()
 
-    private let loadingIndicator = LoadingSpinnerView()
+    private let loadingIndicator: LoadingSpinnerView = {
+        let spinner = LoadingSpinnerView()
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        spinner.widthAnchor.constraint(equalToConstant: 42).isActive = true
+        spinner.heightAnchor.constraint(equalToConstant: 42).isActive = true
+        return spinner
+    }()
+
+    private let loadingLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .daangnBody()
+        label.textColor = .daangnGray550
+        label.text = "책 정보 불러오는중.."
+        label.textAlignment = .center
+        return label
+    }()
+
+    private lazy var loadingStackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [loadingIndicator, loadingLabel])
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 8
+        return stack
+    }()
 
     // MARK: - Private
 
@@ -302,7 +328,7 @@ final class BookDetailView: UIView {
 
         priceCardView.addSubview(priceLabel)
 
-        loadingOverlayView.addSubview(loadingIndicator)
+        loadingOverlayView.addSubview(loadingStackView)
 
         NSLayoutConstraint.activate([
             backButton.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor),
@@ -355,10 +381,8 @@ final class BookDetailView: UIView {
             loadingOverlayView.trailingAnchor.constraint(equalTo: trailingAnchor),
             loadingOverlayView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
-            loadingIndicator.centerXAnchor.constraint(equalTo: loadingOverlayView.centerXAnchor),
-            loadingIndicator.centerYAnchor.constraint(equalTo: loadingOverlayView.centerYAnchor),
-            loadingIndicator.widthAnchor.constraint(equalToConstant: 42),
-            loadingIndicator.heightAnchor.constraint(equalToConstant: 42)
+            loadingStackView.centerXAnchor.constraint(equalTo: loadingOverlayView.centerXAnchor),
+            loadingStackView.centerYAnchor.constraint(equalTo: loadingOverlayView.centerYAnchor)
         ])
 
         headerContainerView.heightAnchor.constraint(equalToConstant: 342).isActive = true
@@ -398,19 +422,20 @@ final class BookDetailView: UIView {
 
     func updateFavoriteState(isFavorite: Bool) {
         addToShelfButton.layer.borderColor = UIColor.daangnOrange.cgColor
-        if isFavorite {
-            addToShelfButton.backgroundColor = .daangnOrange
-            addToShelfButton.setTitleColor(.white, for: .normal)
-            addToShelfButton.tintColor = .white
-            addToShelfButton.setImage(UIImage(named: "HeartWhite")?.withRenderingMode(.alwaysOriginal), for: .normal)
-            addToShelfButton.setTitle("내 책장에 담김", for: .normal)
-        } else {
-            addToShelfButton.backgroundColor = .clear
-            addToShelfButton.setTitleColor(.daangnOrange, for: .normal)
-            addToShelfButton.tintColor = .daangnOrange
-            addToShelfButton.setImage(UIImage(named: "Heart17")?.withRenderingMode(.alwaysTemplate), for: .normal)
-            addToShelfButton.setTitle("내 책장에 담기", for: .normal)
-        }
+        var config = addToShelfButton.configuration ?? .filled()
+        config.baseBackgroundColor = isFavorite ? .daangnOrange : .clear
+        config.baseForegroundColor = isFavorite ? .white : .daangnOrange
+        config.image = isFavorite
+            ? UIImage(named: "HeartWhite")?.withRenderingMode(.alwaysOriginal)
+            : UIImage(named: "EmptyHeart")?.withRenderingMode(.alwaysTemplate)
+        config.imagePadding = 6
+        config.imagePlacement = .leading
+        config.attributedTitle = AttributedString(
+            isFavorite ? "내 책장에 담김" : "내 책장에 담기",
+            attributes: .init([.font: UIFont.daangnButton()])
+        )
+        config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20)
+        addToShelfButton.configuration = config
     }
 
     // MARK: - Private Helpers
@@ -478,7 +503,6 @@ final class BookDetailView: UIView {
         button.layer.cornerRadius = 15
         button.layer.borderWidth = 1
         button.layer.borderColor = UIColor.daangnGray200.cgColor
-        button.contentEdgeInsets = .zero
         button.contentHorizontalAlignment = .left
 
         let iconContainer = UIView()

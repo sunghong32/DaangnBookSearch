@@ -14,7 +14,7 @@ final class SearchHistoryDropdownCell: UICollectionViewCell {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.font = .daangnBody()
-        label.textColor = UIColor(hex: 0x364153)
+        label.textColor = .daangnGray700
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()

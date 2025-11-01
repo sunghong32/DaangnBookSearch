@@ -32,6 +32,26 @@ extension UIFont {
     static func daangnPrice() -> UIFont {
         .systemFont(ofSize: 16, weight: .bold)
     }
+
+    static func daangnNavAction() -> UIFont {
+        .systemFont(ofSize: 17, weight: .semibold)
+    }
+
+    static func daangnDetailHeadline() -> UIFont {
+        .systemFont(ofSize: 21, weight: .semibold)
+    }
+
+    static func daangnDetailPriceLarge() -> UIFont {
+        .systemFont(ofSize: 25.5, weight: .medium)
+    }
+
+    static func daangnSectionTitle() -> UIFont {
+        .systemFont(ofSize: 19, weight: .medium)
+    }
+
+    static func daangnSplashTitle() -> UIFont {
+        .systemFont(ofSize: 34, weight: .regular)
+    }
 }
 
 

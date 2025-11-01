@@ -68,3 +68,25 @@ Custom network layer inspired by **Moya**, but implemented manually without any 
 1. Clone the repository  
    ```bash
    git clone https://github.com/sunghong32/DaangnBookSearch.git
+   cd DaangnBookSearch
+   ```
+2. Open the project in Xcode  
+   ```bash
+   open DaangnBookSearch.xcodeproj
+   ```
+3. Build & run (⌘ + R)
+
+## ✅ Tests
+The project includes unit tests that cover the following layers:
+- `NetworkProviderTests`: verifies request success/ failure handling and decoding
+- `SearchViewModelTests`: validates intent-driven state updates (search, load more, favorites)
+- `BookDetailViewModelTests`: ensures detail loading success/failure flows
+- `BookshelfStoreTests` & `BookshelfViewModelTests`: check persistence and removal flows for the favorites bookshelf
+- `DaangnBookSearchUITests`: smoke-test verifying the search UI renders correctly at launch
+
+Run all tests from Xcode with **⌘ + U** or via the command line:
+```bash
+xcodebuild test \
+  -scheme DaangnBookSearch \
+  -destination 'platform=iOS Simulator,name=iPhone 15'
+```
