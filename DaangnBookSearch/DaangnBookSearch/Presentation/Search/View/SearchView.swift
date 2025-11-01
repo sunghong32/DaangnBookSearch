@@ -104,7 +104,7 @@ final class SearchView: UIView {
         let label = UILabel()
         label.text = "검색 결과가 없습니다."
         label.font = .daangnBody()
-        label.textColor = UIColor(hex: 0x4A5565)
+        label.textColor = .daangnGray500
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         label.isHidden = true
@@ -213,7 +213,7 @@ final class SearchView: UIView {
         let label = UILabel()
         label.text = "검색 중..."
         label.font = .daangnBody()
-        label.textColor = UIColor(hex: 0x6A7282)
+        label.textColor = .daangnGray550
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
         return label

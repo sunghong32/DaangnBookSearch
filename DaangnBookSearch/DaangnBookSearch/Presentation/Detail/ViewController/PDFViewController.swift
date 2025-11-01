@@ -109,14 +109,14 @@ private final class PDFView: UIView {
     private let backButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setImage(UIImage(named: "BackOrange")?.withRenderingMode(.alwaysOriginal), for: .normal)
-        button.setTitle("뒤로", for: .normal)
-        button.setTitleColor(.daangnOrange, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
-        button.tintColor = .daangnOrange
+        var config = UIButton.Configuration.plain()
+        config.baseForegroundColor = .daangnOrange
+        config.image = UIImage(named: "BackOrange")?.withRenderingMode(.alwaysOriginal)
+        config.imagePadding = 6
+        config.imagePlacement = .leading
+        config.attributedTitle = AttributedString("뒤로", attributes: .init([.font: UIFont.daangnNavAction()]))
+        button.configuration = config
         button.contentHorizontalAlignment = .leading
-        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: -4, bottom: 0, right: 0)
-        button.imageEdgeInsets = UIEdgeInsets(top: 0, left: -8, bottom: 0, right: 0)
         return button
     }()
 
@@ -130,7 +130,7 @@ private final class PDFView: UIView {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 17, weight: .semibold)
+        label.font = .daangnNavAction()
         label.textColor = .daangnGray900
         return label
     }()

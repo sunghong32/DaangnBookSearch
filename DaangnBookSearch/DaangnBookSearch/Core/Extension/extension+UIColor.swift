@@ -17,7 +17,10 @@ extension UIColor {
     // MARK: - Neutral Palette
 
     static let daangnGray900 = UIColor(hex: 0x101828)
+    static let daangnGray700 = UIColor(hex: 0x364153)
     static let daangnGray600 = UIColor(hex: 0x717182)
+    static let daangnGray550 = UIColor(hex: 0x6A7282)
+    static let daangnGray500 = UIColor(hex: 0x4A5565)
     static let daangnGray400 = UIColor(hex: 0x99A1AF)
     static let daangnGray200 = UIColor(hex: 0xD1D5DC)
 
