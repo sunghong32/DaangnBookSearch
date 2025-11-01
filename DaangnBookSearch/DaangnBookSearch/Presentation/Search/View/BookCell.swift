@@ -17,6 +17,7 @@ final class BookCell: UICollectionViewCell {
     private let priceLabel = UILabel()
     private let favoriteButton = UIButton(type: .system)
     private var imageTask: Task<Void, Never>?
+    var onFavoriteTap: (() -> Void)?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -61,9 +62,8 @@ final class BookCell: UICollectionViewCell {
         priceLabel.textColor = .daangnOrange
 
         favoriteButton.translatesAutoresizingMaskIntoConstraints = false
-        favoriteButton.setImage(UIImage(named: "EmptyHeart")?.withRenderingMode(.alwaysTemplate), for: .normal)
         favoriteButton.tintColor = .daangnGray400
-        favoriteButton.isUserInteractionEnabled = false
+        favoriteButton.addTarget(self, action: #selector(handleFavoriteTap), for: .touchUpInside)
 
         [thumbnailImageView, titleLabel, subtitleLabel, priceLabel, favoriteButton].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
@@ -105,8 +105,10 @@ final class BookCell: UICollectionViewCell {
         subtitleLabel.isHidden = book.subtitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         priceLabel.text = book.price
 
-        let heartImage = UIImage(named: "EmptyHeart")?.withRenderingMode(.alwaysTemplate)
-        favoriteButton.setImage(heartImage, for: .normal)
+        let favoriteImage = isFavorite
+            ? UIImage(named: "Heart24")?.withRenderingMode(.alwaysOriginal)
+            : UIImage(named: "EmptyHeart")?.withRenderingMode(.alwaysTemplate)
+        favoriteButton.setImage(favoriteImage, for: .normal)
         favoriteButton.tintColor = isFavorite ? .daangnOrange : .daangnGray400
 
         thumbnailImageView.image = nil
@@ -136,11 +138,18 @@ final class BookCell: UICollectionViewCell {
         imageTask?.cancel()
         imageTask = nil
         thumbnailImageView.image = nil
+        onFavoriteTap = nil
+        favoriteButton.tintColor = .daangnGray400
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
         cardView.layer.shadowPath = UIBezierPath(roundedRect: cardView.bounds, cornerRadius: cardView.layer.cornerRadius).cgPath
+    }
+
+    @objc
+    private func handleFavoriteTap() {
+        onFavoriteTap?()
     }
 }
 
