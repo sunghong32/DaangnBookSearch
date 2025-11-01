@@ -10,13 +10,16 @@ import UIKit
 final class MainTabBarController: UITabBarController {
 
     private let searchViewModel: SearchViewModel
+    private let bookshelfViewModel: BookshelfViewModel
     private let detailViewControllerBuilder: (BookSummary) -> UIViewController
 
     init(
         searchViewModel: SearchViewModel,
+        bookshelfViewModel: BookshelfViewModel,
         detailViewControllerBuilder: @escaping (BookSummary) -> UIViewController
     ) {
         self.searchViewModel = searchViewModel
+        self.bookshelfViewModel = bookshelfViewModel
         self.detailViewControllerBuilder = detailViewControllerBuilder
         super.init(nibName: nil, bundle: nil)
     }
@@ -60,7 +63,10 @@ final class MainTabBarController: UITabBarController {
             selectedImage: UIImage(named: "MagnifierOrange")?.withRenderingMode(.alwaysOriginal)
         )
 
-        let bookshelfController = BookshelfViewController()
+        let bookshelfController = BookshelfViewController(
+            viewModel: bookshelfViewModel,
+            detailViewControllerBuilder: detailViewControllerBuilder
+        )
         let bookshelfNavigation = UINavigationController(rootViewController: bookshelfController)
         bookshelfNavigation.tabBarItem = UITabBarItem(
             title: "내 책장",

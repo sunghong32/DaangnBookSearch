@@ -26,14 +26,24 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             let bookNetworkRepository = BookNetworkRepository(provider: provider)
             let searchBooksUseCase = SearchBooksUseCase(repo: bookNetworkRepository)
             let fetchBookDetailUseCase = FetchBookDetailUseCase(repo: bookNetworkRepository)
-            let viewModel = SearchViewModel(searchBooksUseCase: searchBooksUseCase)
+            let bookshelfStore = BookshelfStore.shared
+            let viewModel = SearchViewModel(
+                searchBooksUseCase: searchBooksUseCase,
+                bookshelfStore: bookshelfStore
+            )
+            let bookshelfViewModel = BookshelfViewModel(bookshelfStore: bookshelfStore)
             let detailBuilder: (BookSummary) -> UIViewController = { summary in
                 let detailViewModel = BookDetailViewModel(fetchBookDetailUseCase: fetchBookDetailUseCase)
                 detailViewModel.send(.setISBN(summary.isbn13))
-                return BookDetailViewController(viewModel: detailViewModel, summary: summary)
+                return BookDetailViewController(
+                    viewModel: detailViewModel,
+                    summary: summary,
+                    bookshelfStore: bookshelfStore
+                )
             }
             let mainTabBar = MainTabBarController(
                 searchViewModel: viewModel,
+                bookshelfViewModel: bookshelfViewModel,
                 detailViewControllerBuilder: detailBuilder
             )
             window.rootViewController = mainTabBar

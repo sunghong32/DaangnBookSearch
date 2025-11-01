@@ -408,7 +408,7 @@ final class BookDetailView: UIView {
             addToShelfButton.backgroundColor = .clear
             addToShelfButton.setTitleColor(.daangnOrange, for: .normal)
             addToShelfButton.tintColor = .daangnOrange
-            addToShelfButton.setImage(UIImage(named: "EmptyHeart")?.withRenderingMode(.alwaysTemplate), for: .normal)
+            addToShelfButton.setImage(UIImage(named: "Heart17")?.withRenderingMode(.alwaysTemplate), for: .normal)
             addToShelfButton.setTitle("내 책장에 담기", for: .normal)
         }
     }

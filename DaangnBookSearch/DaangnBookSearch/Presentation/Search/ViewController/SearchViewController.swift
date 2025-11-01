@@ -203,7 +203,12 @@ extension SearchViewController: UICollectionViewDataSource {
                 withReuseIdentifier: BookCell.identifier,
                 for: indexPath
             ) as! BookCell
-            cell.configure(with: currentState.books[indexPath.item])
+            let book = currentState.books[indexPath.item]
+            let isFavorite = currentState.favoriteISBNs.contains(book.isbn13)
+            cell.configure(with: book, isFavorite: isFavorite)
+            cell.onFavoriteTap = { [weak self] in
+                self?.viewModel.send(.toggleFavorite(book))
+            }
             return cell
         }
     }

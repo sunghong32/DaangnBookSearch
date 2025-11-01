@@ -17,20 +17,39 @@ final class SearchViewModel {
         var page: Int = 1
         var total: Int = 0
         var errorMessage: String?
+        var favoriteISBNs: Set<String> = []
     }
 
     enum Intent {
         case updateQuery(String)
         case search
         case loadMore
+        case toggleFavorite(BookSummary)
     }
 
     private let searchBooksUseCase: SearchBooksUseCase
+    private let bookshelfStore: BookshelfStore
     private(set) var state = State()
     private var stateChangeHandler: ((State) -> Void)?
+    private var bookshelfObserver: NSObjectProtocol?
 
-    init(searchBooksUseCase: SearchBooksUseCase) {
+    deinit {
+        if let observer = bookshelfObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    init(searchBooksUseCase: SearchBooksUseCase, bookshelfStore: BookshelfStore) {
         self.searchBooksUseCase = searchBooksUseCase
+        self.bookshelfStore = bookshelfStore
+        state.favoriteISBNs = Set(bookshelfStore.currentBooks.map { $0.isbn13 })
+        bookshelfObserver = NotificationCenter.default.addObserver(
+            forName: .bookshelfDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.syncFavoritesFromStore()
+        }
     }
 
     func setStateChangeHandler(_ handler: @escaping (State) -> Void) {
@@ -53,6 +72,21 @@ final class SearchViewModel {
             guard !state.isLoadingMore, state.books.count < state.total else { return }
             Task {
                 await performLoadMore()
+            }
+
+        case let .toggleFavorite(book):
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                let isFavorite = self.bookshelfStore.toggle(book)
+                var favorites = state.favoriteISBNs
+                if isFavorite {
+                    favorites.insert(book.isbn13)
+                } else {
+                    favorites.remove(book.isbn13)
+                }
+                mutateState { state in
+                    state.favoriteISBNs = favorites
+                }
             }
         }
     }
@@ -123,5 +157,13 @@ final class SearchViewModel {
 
     private func notifyStateChange() {
         stateChangeHandler?(state)
+    }
+
+    @MainActor
+    private func syncFavoritesFromStore() {
+        let favorites = Set(bookshelfStore.currentBooks.map { $0.isbn13 })
+        mutateState { state in
+            state.favoriteISBNs = favorites
+        }
     }
 }
