@@ -26,45 +26,89 @@ final class SearchViewModel {
 
     private let searchBooksUseCase: SearchBooksUseCase
     private(set) var state = State()
+    private var stateChangeHandler: ((State) -> Void)?
 
     init(searchBooksUseCase: SearchBooksUseCase) {
         self.searchBooksUseCase = searchBooksUseCase
     }
 
+    func setStateChangeHandler(_ handler: @escaping (State) -> Void) {
+        stateChangeHandler = handler
+    }
+
     func send(_ intent: Intent) {
         switch intent {
         case let .updateQuery(query):
-            state.query = query
+            mutateState { state in
+                state.query = query
+            }
 
         case .search:
             Task {
-                await fetchBooks(query: state.query, page: 1)
+                await performSearch()
             }
 
         case .loadMore:
             guard !state.isLoading, state.books.count < state.total else { return }
             Task {
-                await fetchBooks(query: state.query, page: state.page + 1)
+                await performLoadMore()
             }
         }
     }
 
     @MainActor
-    private func fetchBooks(query: String, page: Int) async {
-        state.isLoading = true
+    private func performSearch() async {
+        let query = state.query
+        guard !query.isEmpty else { return }
+
+        mutateState { $0.isLoading = true }
+        
         do {
-            let result = try await searchBooksUseCase(query: query, page: page)
-            if page == 1 {
+            let result = try await searchBooksUseCase(query: query, page: 1)
+            mutateState { state in
                 state.books = result.items
-            } else {
-                state.books += result.items
+                state.page = result.page
+                state.total = result.total
+                state.errorMessage = nil
+                state.isLoading = false
             }
-            state.page = result.page
-            state.total = result.total
-            state.errorMessage = nil
         } catch {
-            state.errorMessage = "검색 결과를 불러오지 못했습니다."
+            mutateState { state in
+                state.errorMessage = "검색 결과를 불러오지 못했습니다."
+                state.isLoading = false
+            }
         }
-        state.isLoading = false
+    }
+
+    @MainActor
+    private func performLoadMore() async {
+        let query = state.query
+        let nextPage = state.page + 1
+
+        mutateState { $0.isLoading = true }
+        
+        do {
+            let result = try await searchBooksUseCase(query: query, page: nextPage)
+            mutateState { state in
+                state.books += result.items
+                state.page = result.page
+                state.isLoading = false
+            }
+        } catch {
+            mutateState { state in
+                state.errorMessage = "검색 결과를 불러오지 못했습니다."
+                state.isLoading = false
+            }
+        }
+    }
+
+    @MainActor
+    private func mutateState(_ mutation: (inout State) -> Void) {
+        mutation(&state)
+        notifyStateChange()
+    }
+
+    private func notifyStateChange() {
+        stateChangeHandler?(state)
     }
 }
