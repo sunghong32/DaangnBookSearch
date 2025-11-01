@@ -192,14 +192,14 @@ private final class PDFView: UIView {
             backButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 17),
             backButton.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -17),
 
-            titleContainerView.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 8),
+            titleContainerView.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 12),
             titleContainerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             titleContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
-            titleLabel.leadingAnchor.constraint(equalTo: titleContainerView.leadingAnchor, constant: 20),
-            titleLabel.trailingAnchor.constraint(equalTo: titleContainerView.trailingAnchor, constant: -20),
-            titleLabel.topAnchor.constraint(equalTo: titleContainerView.topAnchor, constant: 14),
-            titleLabel.bottomAnchor.constraint(equalTo: titleContainerView.bottomAnchor, constant: -14),
+            titleLabel.leadingAnchor.constraint(equalTo: titleContainerView.leadingAnchor, constant: 17),
+            titleLabel.trailingAnchor.constraint(equalTo: titleContainerView.trailingAnchor, constant: -17),
+            titleLabel.topAnchor.constraint(equalTo: titleContainerView.topAnchor, constant: 16),
+            titleLabel.bottomAnchor.constraint(equalTo: titleContainerView.bottomAnchor, constant: -16),
 
             titleDivider.leadingAnchor.constraint(equalTo: titleContainerView.leadingAnchor),
             titleDivider.trailingAnchor.constraint(equalTo: titleContainerView.trailingAnchor),

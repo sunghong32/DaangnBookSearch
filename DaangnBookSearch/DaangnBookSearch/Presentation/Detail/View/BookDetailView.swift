@@ -70,7 +70,7 @@ final class BookDetailView: UIView {
     private let contentStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
-        stack.spacing = 24
+        stack.spacing = 25
         stack.alignment = .fill
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
@@ -113,7 +113,7 @@ final class BookDetailView: UIView {
         let stack = UIStackView()
         stack.axis = .vertical
         stack.alignment = .leading
-        stack.spacing = 12
+        stack.spacing = 8
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
@@ -298,7 +298,7 @@ final class BookDetailView: UIView {
         infoStackView.addArrangedSubview(titleLabel)
         infoStackView.addArrangedSubview(subtitleLabel)
         infoStackView.addArrangedSubview(addToShelfButton)
-        infoStackView.setCustomSpacing(20, after: subtitleLabel)
+        infoStackView.setCustomSpacing(16, after: subtitleLabel)
 
         priceCardView.addSubview(priceLabel)
 
@@ -309,7 +309,7 @@ final class BookDetailView: UIView {
             backButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 17),
             backButton.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -17),
 
-            scrollView.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 8),
+            scrollView.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 12),
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
@@ -320,9 +320,9 @@ final class BookDetailView: UIView {
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
 
-            contentStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
-            contentStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            contentStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            contentStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 26),
+            contentStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 17),
+            contentStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -17),
             contentStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -32),
 
             coverShadowView.widthAnchor.constraint(equalToConstant: 136),
@@ -345,10 +345,10 @@ final class BookDetailView: UIView {
             priceLabel.centerYAnchor.constraint(equalTo: priceCardView.centerYAnchor),
             priceLabel.leadingAnchor.constraint(equalTo: priceCardView.leadingAnchor, constant: 20),
 
-            infoRowsStackView.topAnchor.constraint(equalTo: infoCardView.topAnchor, constant: 20),
-            infoRowsStackView.leadingAnchor.constraint(equalTo: infoCardView.leadingAnchor, constant: 20),
-            infoRowsStackView.trailingAnchor.constraint(equalTo: infoCardView.trailingAnchor, constant: -20),
-            infoRowsStackView.bottomAnchor.constraint(equalTo: infoCardView.bottomAnchor, constant: -20),
+            infoRowsStackView.topAnchor.constraint(equalTo: infoCardView.topAnchor, constant: 17),
+            infoRowsStackView.leadingAnchor.constraint(equalTo: infoCardView.leadingAnchor, constant: 17),
+            infoRowsStackView.trailingAnchor.constraint(equalTo: infoCardView.trailingAnchor, constant: -17),
+            infoRowsStackView.bottomAnchor.constraint(equalTo: infoCardView.bottomAnchor, constant: -17),
 
             loadingOverlayView.topAnchor.constraint(equalTo: topAnchor),
             loadingOverlayView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -509,7 +509,7 @@ final class BookDetailView: UIView {
         button.addSubview(chevron)
 
         NSLayoutConstraint.activate([
-            iconContainer.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: 16),
+            iconContainer.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: 17),
             iconContainer.centerYAnchor.constraint(equalTo: button.centerYAnchor),
             iconContainer.widthAnchor.constraint(equalToConstant: 40),
             iconContainer.heightAnchor.constraint(equalToConstant: 40),
@@ -519,16 +519,16 @@ final class BookDetailView: UIView {
             iconImage.widthAnchor.constraint(equalToConstant: 20),
             iconImage.heightAnchor.constraint(equalToConstant: 20),
 
-            titleLabel.leadingAnchor.constraint(equalTo: iconContainer.trailingAnchor, constant: 12),
+            titleLabel.leadingAnchor.constraint(equalTo: iconContainer.trailingAnchor, constant: 14),
             titleLabel.centerYAnchor.constraint(equalTo: button.centerYAnchor),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: chevron.leadingAnchor, constant: -12),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: chevron.leadingAnchor, constant: -14),
 
-            chevron.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -16),
+            chevron.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -17),
             chevron.centerYAnchor.constraint(equalTo: button.centerYAnchor),
             chevron.widthAnchor.constraint(equalToConstant: 12),
             chevron.heightAnchor.constraint(equalToConstant: 12),
 
-            button.heightAnchor.constraint(greaterThanOrEqualToConstant: 64)
+            button.heightAnchor.constraint(equalToConstant: 64)
         ])
 
         button.addAction(UIAction { [weak self] _ in
