@@ -164,8 +164,8 @@ final class SearchView: UIView {
             collectionView.trailingAnchor.constraint(equalTo: trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
-            emptyStateStackView.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor),
-            emptyStateStackView.centerYAnchor.constraint(equalTo: collectionView.centerYAnchor)
+            emptyStateStackView.centerXAnchor.constraint(equalTo: safeAreaLayoutGuide.centerXAnchor),
+            emptyStateStackView.centerYAnchor.constraint(equalTo: safeAreaLayoutGuide.centerYAnchor)
         ])
 
         collectionView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 24, right: 0)

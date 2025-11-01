@@ -26,8 +26,8 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             let bookNetworkRepository = BookNetworkRepository(provider: provider)
             let searchBooksUseCase = SearchBooksUseCase(repo: bookNetworkRepository)
             let viewModel = SearchViewModel(searchBooksUseCase: searchBooksUseCase)
-            let main = UINavigationController(rootViewController: SearchViewController(viewModel: viewModel))
-            window.rootViewController = main
+            let mainTabBar = MainTabBarController(searchViewModel: viewModel)
+            window.rootViewController = mainTabBar
             window.makeKeyAndVisible()
         }
 
