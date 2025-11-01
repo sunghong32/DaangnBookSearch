@@ -135,6 +135,7 @@ final class SearchView: UIView {
         view.layer.shadowOpacity = 1
         view.layer.shadowRadius = 10
         view.layer.shadowOffset = CGSize(width: 0, height: 4)
+        view.layer.masksToBounds = false
         view.isHidden = true
         return view
     }()
@@ -393,6 +394,7 @@ final class SearchView: UIView {
         let totalHeight = itemCount == 0 ? 0 : headerHeight + CGFloat(visibleRows) * rowHeight + 12
         historyDropdownHeightConstraint?.constant = totalHeight
         historyDropdownCollectionView.isScrollEnabled = itemCount > 5
+        historyClearButton.isHidden = itemCount == 0
     }
 }
 

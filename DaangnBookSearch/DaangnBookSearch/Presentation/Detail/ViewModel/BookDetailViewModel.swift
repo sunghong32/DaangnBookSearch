@@ -23,6 +23,7 @@ final class BookDetailViewModel {
 
     private let fetchBookDetailUseCase: FetchBookDetailUseCase
     private(set) var state = State()
+    private var stateChangeHandler: ((State) -> Void)?
 
     init(fetchBookDetailUseCase: FetchBookDetailUseCase) {
         self.fetchBookDetailUseCase = fetchBookDetailUseCase
@@ -31,7 +32,7 @@ final class BookDetailViewModel {
     func send(_ intent: Intent) {
         switch intent {
         case let .setISBN(isbn13):
-            state.isbn13 = isbn13
+            mutateState { $0.isbn13 = isbn13 }
 
         case .load:
             guard state.isbn13.isEmpty == false else { return }
@@ -43,14 +44,30 @@ final class BookDetailViewModel {
 
     @MainActor
     private func loadDetail(isbn13: String) async {
-        state.isLoading = true
+        mutateState {
+            $0.isLoading = true
+            $0.errorMessage = nil
+        }
         do {
             let detail = try await fetchBookDetailUseCase(isbn13: isbn13)
-            state.detail = detail
-            state.errorMessage = nil
+            mutateState {
+                $0.detail = detail
+                $0.errorMessage = nil
+            }
         } catch {
-            state.errorMessage = "상세 정보를 불러오지 못했습니다."
+            mutateState {
+                $0.errorMessage = "상세 정보를 불러오지 못했습니다."
+            }
         }
-        state.isLoading = false
+        mutateState { $0.isLoading = false }
+    }
+
+    func setStateChangeHandler(_ handler: @escaping (State) -> Void) {
+        stateChangeHandler = handler
+    }
+
+    private func mutateState(_ mutation: (inout State) -> Void) {
+        mutation(&state)
+        stateChangeHandler?(state)
     }
 }

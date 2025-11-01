@@ -31,6 +31,7 @@ final class SearchHistoryDropdownCell: UICollectionViewCell {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = .daangnGray200
+        view.isHidden = true
         return view
     }()
 
