@@ -34,15 +34,15 @@ final class BookCell: UICollectionViewCell {
         thumbnailImageView.backgroundColor = .tertiarySystemBackground
         thumbnailImageView.layer.cornerRadius = 4
 
-        titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        titleLabel.font = .daangnListTitle()
         titleLabel.numberOfLines = 2
 
-        subtitleLabel.font = .systemFont(ofSize: 14)
+        subtitleLabel.font = .daangnListSubtitle()
         subtitleLabel.textColor = .secondaryLabel
         subtitleLabel.numberOfLines = 1
 
-        priceLabel.font = .systemFont(ofSize: 16, weight: .bold)
-        priceLabel.textColor = UIColor(red: 1.0, green: 0.44, blue: 0.06, alpha: 1.0)
+        priceLabel.font = .daangnPrice()
+        priceLabel.textColor = .daangnOrange
 
         [thumbnailImageView, titleLabel, subtitleLabel, priceLabel].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false

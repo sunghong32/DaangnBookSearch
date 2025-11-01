@@ -21,8 +21,8 @@ final class SearchView: UIView {
     let titleLabel: UILabel = {
         let label = UILabel()
         label.text = "책 검색"
-        label.font = UIFont.systemFont(ofSize: 26, weight: .medium)
-        label.textColor = UIColor(hex: 0x101828)
+        label.font = .daangnHeading()
+        label.textColor = .daangnGray900
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -32,7 +32,7 @@ final class SearchView: UIView {
         view.backgroundColor = .clear
         view.layer.cornerRadius = 14.5
         view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor(hex: 0xD1D5DC).cgColor
+        view.layer.borderColor = UIColor.daangnGray200.cgColor
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -41,15 +41,15 @@ final class SearchView: UIView {
         let textField = UITextField()
         textField.placeholder = "책 제목, 저자명으로 검색"
         textField.borderStyle = .none
-        textField.font = UIFont.systemFont(ofSize: 17)
-        textField.textColor = UIColor(hex: 0x101828)
+        textField.font = .daangnBody()
+        textField.textColor = .daangnGray900
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.returnKeyType = .search
         textField.clearButtonMode = .whileEditing
 
         let iconImage = UIImage(named: "Magnifier20")?.withRenderingMode(.alwaysTemplate)
         let icon = UIImageView(image: iconImage)
-        icon.tintColor = UIColor(hex: 0x717182)
+        icon.tintColor = .daangnGray600
         icon.contentMode = .scaleAspectFit
         icon.frame = CGRect(x: 0, y: 0, width: 24, height: 24)
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 36, height: 50))
@@ -65,8 +65,8 @@ final class SearchView: UIView {
         let button = UIButton(type: .system)
         button.setTitle("검색", for: .normal)
         button.setTitleColor(.white, for: .normal)
-        button.titleLabel?.font = UIFont.systemFont(ofSize: 15, weight: .medium)
-        button.backgroundColor = UIColor(hex: 0xFF6F0F)
+        button.titleLabel?.font = .daangnButton()
+        button.backgroundColor = .daangnOrange
         button.layer.cornerRadius = 14.5
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
@@ -75,7 +75,7 @@ final class SearchView: UIView {
     private let emptyStateStackView: UIStackView = {
         let image = UIImage(named: "Magnifier48")?.withRenderingMode(.alwaysTemplate)
         let imageView = UIImageView(image: image)
-        imageView.tintColor = UIColor(hex: 0x99A1AF)
+        imageView.tintColor = .daangnGray400
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -85,8 +85,8 @@ final class SearchView: UIView {
 
         let label = UILabel()
         label.text = "책을 검색해보세요"
-        label.font = UIFont.systemFont(ofSize: 17)
-        label.textColor = UIColor(hex: 0x99A1AF)
+        label.font = .daangnBody()
+        label.textColor = .daangnGray400
         label.textAlignment = .center
 
         let stack = UIStackView(arrangedSubviews: [imageView, label])
@@ -194,7 +194,7 @@ private final class GradientBackgroundView: UIView {
     }
 
     private func setup() {
-        gradientLayer.colors = [UIColor(hex: 0xFFF7ED).cgColor, UIColor.white.cgColor]
+        gradientLayer.colors = [UIColor.daangnBackgroundAccent.cgColor, UIColor.white.cgColor]
         gradientLayer.startPoint = CGPoint(x: 0.5, y: 0)
         gradientLayer.endPoint = CGPoint(x: 0.5, y: 1)
         layer.insertSublayer(gradientLayer, at: 0)
@@ -208,11 +208,3 @@ private final class GradientBackgroundView: UIView {
 
 // MARK: - UIColor+Hex
 
-private extension UIColor {
-    convenience init(hex: UInt32, alpha: CGFloat = 1.0) {
-        let red = CGFloat((hex & 0xFF0000) >> 16) / 255.0
-        let green = CGFloat((hex & 0x00FF00) >> 8) / 255.0
-        let blue = CGFloat(hex & 0x0000FF) / 255.0
-        self.init(red: red, green: green, blue: blue, alpha: alpha)
-    }
-}
