@@ -10,7 +10,7 @@ import UIKit
 extension UIFont {
 
     static func daangnHeading() -> UIFont {
-        .systemFont(ofSize: 26, weight: .medium)
+        .systemFont(ofSize: 26, weight: .bold)
     }
 
     static func daangnBody() -> UIFont {

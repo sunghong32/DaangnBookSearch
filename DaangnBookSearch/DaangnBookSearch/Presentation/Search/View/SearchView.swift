@@ -46,6 +46,9 @@ final class SearchView: UIView {
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.returnKeyType = .search
         textField.clearButtonMode = .whileEditing
+        textField.autocorrectionType = .no
+        textField.autocapitalizationType = .none
+        textField.spellCheckingType = .no
 
         let iconImage = UIImage(named: "Magnifier20")?.withRenderingMode(.alwaysTemplate)
         let icon = UIImageView(image: iconImage)
@@ -72,7 +75,7 @@ final class SearchView: UIView {
         return button
     }()
 
-    private let emptyStateStackView: UIStackView = {
+    private let initialPlaceholderStackView: UIStackView = {
         let image = UIImage(named: "Magnifier48")?.withRenderingMode(.alwaysTemplate)
         let imageView = UIImageView(image: image)
         imageView.tintColor = .daangnGray400
@@ -91,10 +94,21 @@ final class SearchView: UIView {
 
         let stack = UIStackView(arrangedSubviews: [imageView, label])
         stack.axis = .vertical
-        stack.spacing = 8
         stack.alignment = .center
+        stack.spacing = 8
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
+    }()
+
+    private let emptyResultLabel: UILabel = {
+        let label = UILabel()
+        label.text = "검색 결과가 없습니다."
+        label.font = .daangnBody()
+        label.textColor = UIColor(hex: 0x4A5565)
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.isHidden = true
+        return label
     }()
 
     let collectionView: UICollectionView = {
@@ -104,10 +118,47 @@ final class SearchView: UIView {
         layout.sectionInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
 
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        cv.backgroundColor = .white
+        cv.backgroundColor = .clear
         cv.translatesAutoresizingMaskIntoConstraints = false
         cv.keyboardDismissMode = .onDrag
         return cv
+    }()
+
+    private let loadingOverlayView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.85)
+        view.isHidden = true
+        return view
+    }()
+
+    private let loadingSpinner: LoadingSpinnerView = {
+        let spinner = LoadingSpinnerView()
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            spinner.widthAnchor.constraint(equalToConstant: 42),
+            spinner.heightAnchor.constraint(equalToConstant: 42)
+        ])
+        return spinner
+    }()
+
+    private let loadingLabel: UILabel = {
+        let label = UILabel()
+        label.text = "검색 중..."
+        label.font = .daangnBody()
+        label.textColor = UIColor(hex: 0x6A7282)
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    private lazy var loadingStackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [loadingSpinner, loadingLabel])
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = 8
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
     }()
 
     // MARK: - init
@@ -116,6 +167,8 @@ final class SearchView: UIView {
         super.init(frame: frame)
         backgroundColor = .white
         setupLayout()
+        showInitialPlaceholder()
+        setCollectionViewVisible(false)
     }
 
     @available(*, unavailable)
@@ -128,7 +181,10 @@ final class SearchView: UIView {
     private func setupLayout() {
         addSubview(headerContainerView)
         addSubview(collectionView)
-        addSubview(emptyStateStackView)
+        addSubview(initialPlaceholderStackView)
+        addSubview(emptyResultLabel)
+        addSubview(loadingOverlayView)
+        loadingOverlayView.addSubview(loadingStackView)
 
         headerContainerView.addSubview(titleLabel)
         headerContainerView.addSubview(searchContainerView)
@@ -164,8 +220,19 @@ final class SearchView: UIView {
             collectionView.trailingAnchor.constraint(equalTo: trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
-            emptyStateStackView.centerXAnchor.constraint(equalTo: safeAreaLayoutGuide.centerXAnchor),
-            emptyStateStackView.centerYAnchor.constraint(equalTo: safeAreaLayoutGuide.centerYAnchor)
+            initialPlaceholderStackView.centerXAnchor.constraint(equalTo: safeAreaLayoutGuide.centerXAnchor),
+            initialPlaceholderStackView.centerYAnchor.constraint(equalTo: safeAreaLayoutGuide.centerYAnchor),
+
+            emptyResultLabel.centerXAnchor.constraint(equalTo: safeAreaLayoutGuide.centerXAnchor),
+            emptyResultLabel.centerYAnchor.constraint(equalTo: safeAreaLayoutGuide.centerYAnchor),
+
+            loadingOverlayView.topAnchor.constraint(equalTo: topAnchor),
+            loadingOverlayView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            loadingOverlayView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            loadingOverlayView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            loadingStackView.centerXAnchor.constraint(equalTo: loadingOverlayView.centerXAnchor),
+            loadingStackView.centerYAnchor.constraint(equalTo: loadingOverlayView.centerYAnchor)
         ])
 
         collectionView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 24, right: 0)
@@ -173,8 +240,39 @@ final class SearchView: UIView {
 
     // MARK: - Helpers
 
-    func updateEmptyState(isHidden: Bool) {
-        emptyStateStackView.isHidden = isHidden
+    func showInitialPlaceholder() {
+        initialPlaceholderStackView.isHidden = false
+        emptyResultLabel.isHidden = true
+    }
+
+    func showEmptyResultPlaceholder() {
+        initialPlaceholderStackView.isHidden = true
+        emptyResultLabel.isHidden = false
+    }
+
+    func hidePlaceholders() {
+        initialPlaceholderStackView.isHidden = true
+        emptyResultLabel.isHidden = true
+    }
+
+    func setCollectionViewVisible(_ visible: Bool) {
+        collectionView.isHidden = !visible
+    }
+
+    func setLoadingOverlayVisible(_ visible: Bool) {
+        loadingOverlayView.isHidden = !visible
+        if visible {
+            loadingSpinner.startAnimating()
+        } else {
+            loadingSpinner.stopAnimating()
+        }
+    }
+
+    func updateQueryText(_ text: String) {
+        guard !queryTextField.isFirstResponder else { return }
+        if queryTextField.text != text {
+            queryTextField.text = text
+        }
     }
 }
 
