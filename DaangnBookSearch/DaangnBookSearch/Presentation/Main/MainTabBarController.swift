@@ -10,9 +10,14 @@ import UIKit
 final class MainTabBarController: UITabBarController {
 
     private let searchViewModel: SearchViewModel
+    private let detailViewControllerBuilder: (BookSummary) -> UIViewController
 
-    init(searchViewModel: SearchViewModel) {
+    init(
+        searchViewModel: SearchViewModel,
+        detailViewControllerBuilder: @escaping (BookSummary) -> UIViewController
+    ) {
         self.searchViewModel = searchViewModel
+        self.detailViewControllerBuilder = detailViewControllerBuilder
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -44,7 +49,10 @@ final class MainTabBarController: UITabBarController {
     }
 
     private func setupTabs() {
-        let searchController = SearchViewController(viewModel: searchViewModel)
+        let searchController = SearchViewController(
+            viewModel: searchViewModel,
+            detailViewControllerBuilder: detailViewControllerBuilder
+        )
         let searchNavigation = UINavigationController(rootViewController: searchController)
         searchNavigation.tabBarItem = UITabBarItem(
             title: "검색",
@@ -57,7 +65,7 @@ final class MainTabBarController: UITabBarController {
         bookshelfNavigation.tabBarItem = UITabBarItem(
             title: "내 책장",
             image: UIImage(named: "EmptyHeart")?.withRenderingMode(.alwaysTemplate),
-            selectedImage: UIImage(named: "EmptyHeart")?.withRenderingMode(.alwaysTemplate)
+            selectedImage: UIImage(named: "Heart17")?.withRenderingMode(.alwaysOriginal)
         )
 
         setViewControllers([searchNavigation, bookshelfNavigation], animated: false)

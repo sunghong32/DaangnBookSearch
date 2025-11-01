@@ -10,6 +10,7 @@ import UIKit
 final class SearchViewController: UIViewController {
 
     private let viewModel: SearchViewModel
+    private let detailViewControllerBuilder: (BookSummary) -> UIViewController
     private var customView: SearchView {
         view as! SearchView
     }
@@ -18,8 +19,9 @@ final class SearchViewController: UIViewController {
     private var hasPerformedSearch = false
     private var histories: [String] = SearchHistoryStore.shared.loadHistories()
 
-    init(viewModel: SearchViewModel) {
+    init(viewModel: SearchViewModel, detailViewControllerBuilder: @escaping (BookSummary) -> UIViewController) {
         self.viewModel = viewModel
+        self.detailViewControllerBuilder = detailViewControllerBuilder
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -244,8 +246,10 @@ extension SearchViewController: UICollectionViewDelegate {
             viewModel.send(.search)
             storeHistoryIfNeeded()
         } else {
-            let book = currentState.books[indexPath.item]
-            print("Selected: \(book.title)")
+            let summary = currentState.books[indexPath.item]
+            let detailViewController = detailViewControllerBuilder(summary)
+            detailViewController.hidesBottomBarWhenPushed = true
+            navigationController?.pushViewController(detailViewController, animated: true)
         }
     }
 

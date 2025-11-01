@@ -5,14 +5,22 @@
 //  Moved & updated by Assistant on 10/31/25.
 //
 
+import Foundation
 import UIKit
 
 final class BookDetailViewController: UIViewController {
 
     private let viewModel: BookDetailViewModel
+    private let initialSummary: BookSummary?
+    private var currentDetail: BookDetail?
+    private var isFavorite = false
+    private var lastErrorMessage: String?
 
-    init(viewModel: BookDetailViewModel) {
+    private var detailView: BookDetailView { view as! BookDetailView }
+
+    init(viewModel: BookDetailViewModel, summary: BookSummary? = nil) {
         self.viewModel = viewModel
+        self.initialSummary = summary
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -27,8 +35,120 @@ final class BookDetailViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Book Detail"
+        navigationItem.largeTitleDisplayMode = .never
+        view.backgroundColor = .systemBackground
+        setupBindings()
+        if let summary = initialSummary {
+            preconfigure(with: summary)
+        }
+        render(state: viewModel.state)
+        viewModel.send(.load)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+
+    private func setupBindings() {
+        detailView.onAddToShelfTap = { [weak self] in
+            self?.toggleFavoriteState()
+        }
+
+        detailView.onPDFSelected = { [weak self] url in
+            self?.presentPDF(url)
+        }
+
+        detailView.onBackButtonTap = { [weak self] in
+            self?.handleBackButtonTapped()
+        }
+
+        viewModel.setStateChangeHandler { [weak self] state in
+            DispatchQueue.main.async {
+                self?.render(state: state)
+            }
+        }
+    }
+
+    private func render(state: BookDetailViewModel.State) {
+        detailView.setLoading(state.isLoading)
+
+        if let detail = state.detail {
+            currentDetail = detail
+            detailView.configure(with: makeViewData(detail: detail))
+        }
+
+        if let message = state.errorMessage, message != lastErrorMessage {
+            lastErrorMessage = message
+            presentErrorAlert(message: message)
+        }
+    }
+
+    private func toggleFavoriteState() {
+        isFavorite.toggle()
+        detailView.updateFavoriteState(isFavorite: isFavorite)
+    }
+
+    private func makeViewData(detail: BookDetail) -> BookDetailView.ViewData {
+        let description = detail.desc.isEmpty ? "상세 설명이 없습니다." : detail.desc
+        let pdfItems: [BookDetailView.ViewData.PDFItem] = detail.pdfs
+            .sorted { $0.key < $1.key }
+            .compactMap { key, value in
+                BookDetailView.ViewData.PDFItem(title: key, url: value)
+            }
+
+        let pages = detail.pages.isEmpty ? "" : "\(detail.pages)쪽"
+        return BookDetailView.ViewData(
+            title: detail.title,
+            subtitle: detail.subtitle,
+            price: detail.price,
+            authors: detail.authors,
+            publisher: detail.publisher,
+            pages: pages,
+            year: detail.year,
+            description: description,
+            imageURL: detail.imageURL,
+            pdfs: pdfItems,
+            isFavorited: isFavorite
+        )
+    }
+
+    private func preconfigure(with summary: BookSummary) {
+        navigationItem.title = summary.title
+        let provisionalData = BookDetailView.ViewData(
+            title: summary.title,
+            subtitle: summary.subtitle,
+            price: summary.price,
+            authors: "",
+            publisher: "",
+            pages: "",
+            year: "",
+            description: "",
+            imageURL: summary.imageURL,
+            pdfs: [],
+            isFavorited: isFavorite
+        )
+        detailView.configure(with: provisionalData)
+    }
+
+    private func presentPDF(_ url: URL) {
+        let pdfViewController = PDFViewController(url: url, title: url.lastPathComponent)
+        navigationController?.pushViewController(pdfViewController, animated: true)
+    }
+
+    private func presentErrorAlert(message: String) {
+        let alert = UIAlertController(title: "오류", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        present(alert, animated: true)
+    }
+
+    @objc
+    private func handleBackButtonTapped() {
+        navigationController?.popViewController(animated: true)
     }
 }
-
-
