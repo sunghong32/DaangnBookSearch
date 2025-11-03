@@ -11,15 +11,18 @@ final class MainTabBarController: UITabBarController {
 
     private let searchViewModel: SearchViewModel
     private let bookshelfViewModel: BookshelfViewModel
+    private let searchHistoryStore: SearchHistoryStore
     private let detailViewControllerBuilder: (BookSummary) -> UIViewController
 
     init(
         searchViewModel: SearchViewModel,
         bookshelfViewModel: BookshelfViewModel,
+        searchHistoryStore: SearchHistoryStore,
         detailViewControllerBuilder: @escaping (BookSummary) -> UIViewController
     ) {
         self.searchViewModel = searchViewModel
         self.bookshelfViewModel = bookshelfViewModel
+        self.searchHistoryStore = searchHistoryStore
         self.detailViewControllerBuilder = detailViewControllerBuilder
         super.init(nibName: nil, bundle: nil)
     }
@@ -54,6 +57,7 @@ final class MainTabBarController: UITabBarController {
     private func setupTabs() {
         let searchController = SearchViewController(
             viewModel: searchViewModel,
+            searchHistoryStore: searchHistoryStore,
             detailViewControllerBuilder: detailViewControllerBuilder
         )
         let searchNavigation = UINavigationController(rootViewController: searchController)

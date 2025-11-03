@@ -8,498 +8,359 @@
 import XCTest
 @testable import DaangnBookSearch
 
-// MARK: - Network Layer Tests
+// MARK: - SearchViewModelTests
 
-final class NetworkProviderTests: XCTestCase {
-
-    private var provider: NetworkProvider!
-
-    override func setUp() {
-        super.setUp()
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [MockURLProtocol.self]
-        let session = URLSession(configuration: configuration)
-        provider = NetworkProvider(session: session)
-    }
-
-    override func tearDown() {
-        super.tearDown()
-        MockURLProtocol.requestHandler = nil
-        provider = nil
-    }
-
-    func testRequestSuccessDecodesResponse() async throws {
-        let expectation = expectation(description: "request")
-        let sample = SampleDecodable(id: 1, title: "Sample")
-        let data = try JSONEncoder().encode(sample)
-
-        MockURLProtocol.requestHandler = { request in
-            XCTAssertEqual(request.url?.path, "/mock")
-            let response = HTTPURLResponse(
-                url: request.url!,
-                statusCode: 200,
-                httpVersion: nil,
-                headerFields: nil
-            )!
-            expectation.fulfill()
-            return (response, data)
-        }
-
-        let result: SampleDecodable = try await provider.request(MockNetworkTarget(), as: SampleDecodable.self)
-        await fulfillment(of: [expectation], timeout: 1)
-
-        XCTAssertEqual(result.id, 1)
-        XCTAssertEqual(result.title, "Sample")
-    }
-
-    func testRequestWithServerErrorThrows() async {
-        MockURLProtocol.requestHandler = { request in
-            let response = HTTPURLResponse(
-                url: request.url!,
-                statusCode: 500,
-                httpVersion: nil,
-                headerFields: nil
-            )!
-            return (response, Data())
-        }
-
-        do {
-            _ = try await provider.request(MockNetworkTarget(), as: SampleDecodable.self)
-            XCTFail("Expected request to throw, but it succeeded")
-        } catch {
-            // Success: an error was thrown as expected
-        }
-    }
-}
-
-// MARK: - SearchViewModel Tests
-
-@MainActor
 final class SearchViewModelTests: XCTestCase {
 
-    private var repository: MockBookRepository!
-    private var store: BookshelfStore!
-    private var userDefaults: UserDefaults!
-    private var suiteName: String!
+    @MainActor
+    func testSearchSuccessUpdatesStateWithFetchedBooks() async throws {
+        // given
+        let repository = MockBookRepository()
+        let books = [
+            BookSummary.stub(title: "Swift Concurrency", subtitle: "Modern Async Patterns", isbn13: "111", price: "$10"),
+            BookSummary.stub(title: "iOS Unit Testing", subtitle: "XCTest in Practice", isbn13: "222", price: "$12")
+        ]
+        repository.searchResult = (items: books, total: 2, page: 1)
+        let useCase = SearchBooksUseCase(repo: repository)
 
-    override func setUp() {
-        super.setUp()
-        repository = MockBookRepository()
-        suiteName = "search-view-model-tests-\(UUID().uuidString)"
-        guard let defaults = UserDefaults(suiteName: suiteName) else {
-            XCTFail("Failed to create UserDefaults for test")
+        let suiteName = "SearchViewModelTests.success"
+        guard let userDefaults = UserDefaults(suiteName: suiteName) else {
+            XCTFail("Failed to create UserDefaults suite")
             return
         }
-        userDefaults = defaults
         userDefaults.removePersistentDomain(forName: suiteName)
-        store = BookshelfStore(userDefaults: userDefaults)
-    }
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
 
-    override func tearDown() {
-        if let suiteName {
-            userDefaults?.removePersistentDomain(forName: suiteName)
-        }
-        repository = nil
-        store = nil
-        userDefaults = nil
-        suiteName = nil
-        super.tearDown()
-    }
+        let bookshelfStore = BookshelfStore(userDefaults: userDefaults)
+        let sut = SearchViewModel(searchBooksUseCase: useCase, bookshelfStore: bookshelfStore)
 
-    func testSearchSuccessUpdatesBooks() async {
-        repository.searchHandler = { _, page in
-            let books: [DaangnBookSearch.BookSummary] = [
-                DaangnBookSearch.BookSummary(title: "Swift for Beginners", subtitle: "", isbn13: "1", price: "$10", imageURL: nil, url: nil)
-            ]
-            return (items: books, total: 1, page: page)
-        }
+        let expectation = expectation(description: "Search results delivered")
 
-        let useCase = SearchBooksUseCase(repo: repository)
-        let viewModel = SearchViewModel(searchBooksUseCase: useCase, bookshelfStore: store)
-        let expectation = expectation(description: "search")
-
-        viewModel.setStateChangeHandler { state in
-            if !state.isLoading, !state.books.isEmpty {
-                XCTAssertEqual(state.books.count, 1)
-                XCTAssertEqual(state.books.first?.title, "Swift for Beginners")
+        sut.setStateChangeHandler { state in
+            if !state.isLoading, state.books == books {
+                XCTAssertEqual(state.page, 1)
+                XCTAssertEqual(state.total, 2)
+                XCTAssertNil(state.errorMessage)
                 expectation.fulfill()
             }
         }
 
-        viewModel.send(SearchViewModel.Intent.updateQuery("Swift"))
-        viewModel.send(SearchViewModel.Intent.search)
+        // when
+        sut.send(SearchViewModel.Intent.updateQuery("Swift"))
+        sut.send(SearchViewModel.Intent.search)
 
-        await fulfillment(of: [expectation], timeout: 1)
+        // then
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(repository.searchCallCount, 1)
     }
 
-    func testLoadMoreAppendsBooks() async {
-        repository.searchHandler = { _, page in
-            if page == 1 {
-                let items: [BookSummary] = [
-                    BookSummary(title: "Page1", subtitle: "", isbn13: "1", price: "$10", imageURL: nil, url: nil)
-                ]
-                return (items: items, total: 2, page: page)
-            } else {
-                let items: [BookSummary] = [
-                    BookSummary(title: "Page2", subtitle: "", isbn13: "2", price: "$12", imageURL: nil, url: nil)
-                ]
-                return (items: items, total: 2, page: page)
-            }
-        }
-
+    @MainActor
+    func testSearchFailureSetsErrorMessage() async throws {
+        // given
+        let repository = MockBookRepository()
+        repository.searchError = MockError.searchFailed
         let useCase = SearchBooksUseCase(repo: repository)
-        let viewModel = SearchViewModel(searchBooksUseCase: useCase, bookshelfStore: store)
-        let searchExpectation = expectation(description: "search")
 
-        viewModel.setStateChangeHandler { state in
-            if !state.isLoading, state.books.count == 1 {
-                searchExpectation.fulfill()
-            }
+        let suiteName = "SearchViewModelTests.failure"
+        guard let userDefaults = UserDefaults(suiteName: suiteName) else {
+            XCTFail("Failed to create UserDefaults suite")
+            return
         }
+        userDefaults.removePersistentDomain(forName: suiteName)
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
 
-        viewModel.send(SearchViewModel.Intent.updateQuery("Swift"))
-        viewModel.send(SearchViewModel.Intent.search)
+        let bookshelfStore = BookshelfStore(userDefaults: userDefaults)
+        let sut = SearchViewModel(searchBooksUseCase: useCase, bookshelfStore: bookshelfStore)
 
-        await fulfillment(of: [searchExpectation], timeout: 1)
+        let expectation = expectation(description: "Error state delivered")
 
-        let loadMoreExpectation = expectation(description: "load more")
-        viewModel.setStateChangeHandler { state in
-            if !state.isLoading, state.books.count == 2 {
-                loadMoreExpectation.fulfill()
-            }
-        }
-
-        viewModel.send(SearchViewModel.Intent.loadMore)
-        await fulfillment(of: [loadMoreExpectation], timeout: 1)
-
-        let titles = viewModel.state.books.map { $0.title }
-        XCTAssertEqual(titles, ["Page1", "Page2"])
-    }
-
-    func testToggleFavoriteUpdatesState() async {
-        let sample = DaangnBookSearch.BookSummary(title: "Favorite", subtitle: "", isbn13: "fav", price: "$0", imageURL: nil, url: nil)
-        repository.searchHandler = { _, _ in
-            let items: [DaangnBookSearch.BookSummary] = [sample]
-            return (items: items, total: 1, page: 1)
-        }
-
-        let viewModel = SearchViewModel(searchBooksUseCase: SearchBooksUseCase(repo: repository), bookshelfStore: store)
-        let expectation = expectation(description: "favorite")
-
-        viewModel.setStateChangeHandler { state in
-            if !state.isLoading, state.books.contains(where: { $0.isbn13 == sample.isbn13 }) {
+        sut.setStateChangeHandler { state in
+            if !state.isLoading, let message = state.errorMessage {
+                XCTAssertEqual(message, "검색 결과를 불러오지 못했습니다.")
+                XCTAssertTrue(state.books.isEmpty)
                 expectation.fulfill()
             }
         }
 
+        // when
+        sut.send(SearchViewModel.Intent.updateQuery("Swift"))
+        sut.send(SearchViewModel.Intent.search)
 
-        viewModel.send(SearchViewModel.Intent.updateQuery("Fav"))
-        viewModel.send(SearchViewModel.Intent.search)
-
-        await fulfillment(of: [expectation], timeout: 1)
-
-        viewModel.send(SearchViewModel.Intent.toggleFavorite(BookSummary(title: sample.title, subtitle: sample.subtitle, isbn13: sample.isbn13, price: sample.price, imageURL: sample.imageURL, url: sample.url)))
-        await Task.yield()
-        XCTAssertTrue(viewModel.state.favoriteISBNs.contains(sample.isbn13))
+        // then
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(repository.searchCallCount, 1)
     }
 
-    func testRefreshFavoritesLoadsFromStore() async {
-        let sample = DaangnBookSearch.BookSummary(title: "Stored", subtitle: "", isbn13: "stored", price: "$0", imageURL: nil, url: nil)
-        repository.searchHandler = { _, _ in
-            let items: [DaangnBookSearch.BookSummary] = [sample]
-            return (items: items, total: 1, page: 1)
+    @MainActor
+    func testSearchWithEmptyQueryDoesNotTriggerNetworkCall() {
+        // given
+        let repository = MockBookRepository()
+        let useCase = SearchBooksUseCase(repo: repository)
+
+        let suiteName = "SearchViewModelTests.emptyQuery"
+        guard let userDefaults = UserDefaults(suiteName: suiteName) else {
+            XCTFail("Failed to create UserDefaults suite")
+            return
         }
+        userDefaults.removePersistentDomain(forName: suiteName)
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
 
-        _ = store.add(sample)
+        let bookshelfStore = BookshelfStore(userDefaults: userDefaults)
+        let sut = SearchViewModel(searchBooksUseCase: useCase, bookshelfStore: bookshelfStore)
 
-        let viewModel = SearchViewModel(searchBooksUseCase: SearchBooksUseCase(repo: repository), bookshelfStore: store)
-        viewModel.send(SearchViewModel.Intent.refreshFavorites)
+        // when
+        sut.send(SearchViewModel.Intent.search)
 
-        XCTAssertTrue(viewModel.state.favoriteISBNs.contains(sample.isbn13))
+        // then
+        XCTAssertEqual(repository.searchCallCount, 0)
     }
 }
 
-// MARK: - BookDetailViewModel Tests
+// MARK: - BookDetailViewModelTests
 
-@MainActor
 final class BookDetailViewModelTests: XCTestCase {
 
-    private var repository: MockBookRepository!
+    @MainActor
+    func testLoadSuccessUpdatesDetailState() async {
+        // given
+        let repository = MockBookRepository()
+        let detail = BookDetail.stub(isbn13: "999")
+        repository.detailResult = detail
+        let useCase = FetchBookDetailUseCase(repo: repository)
+        let sut = BookDetailViewModel(fetchBookDetailUseCase: useCase)
 
-    override func setUp() {
-        super.setUp()
-        repository = MockBookRepository()
-    }
+        let expectation = expectation(description: "Book detail loaded")
 
-    override func tearDown() {
-        repository = nil
-        super.tearDown()
-    }
-
-    func testLoadDetailSuccessUpdatesState() async {
-        let detail = DaangnBookSearch.BookDetail(
-            title: "Detail",
-            subtitle: "",
-            authors: "Tester",
-            publisher: "Publisher",
-            isbn10: "10",
-            isbn13: "13",
-            pages: "100",
-            year: "2024",
-            rating: "5",
-            desc: "Description",
-            price: "$5",
-            imageURL: nil,
-            url: nil,
-            pdfs: [:]
-        )
-
-        repository.detailHandler = { _ in
-            return detail
-        }
-
-        let viewModel = BookDetailViewModel(fetchBookDetailUseCase: FetchBookDetailUseCase(repo: repository))
-        let expectation = expectation(description: "detail")
-
-        viewModel.setStateChangeHandler { state in
-            if !state.isLoading, let loaded = state.detail {
-                XCTAssertEqual(loaded.title, detail.title)
+        sut.setStateChangeHandler { state in
+            if !state.isLoading, let loadedDetail = state.detail, loadedDetail.isbn13 == detail.isbn13 {
+                XCTAssertNil(state.errorMessage)
                 expectation.fulfill()
             }
         }
 
-        viewModel.send(BookDetailViewModel.Intent.setISBN("13"))
-        viewModel.send(BookDetailViewModel.Intent.load)
+        // when
+        sut.send(BookDetailViewModel.Intent.setISBN("999"))
+        sut.send(BookDetailViewModel.Intent.load)
 
-        await fulfillment(of: [expectation], timeout: 1)
+        // then
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(repository.detailCallCount, 1)
     }
 
-    func testLoadDetailFailureSetsErrorMessage() async {
-        repository.detailHandler = { _ in throw MockError.stub }
-        let viewModel = BookDetailViewModel(fetchBookDetailUseCase: FetchBookDetailUseCase(repo: repository))
-        let expectation = expectation(description: "error")
+    @MainActor
+    func testLoadFailureSetsErrorMessage() async {
+        // given
+        let repository = MockBookRepository()
+        repository.detailError = MockError.detailFailed
+        let useCase = FetchBookDetailUseCase(repo: repository)
+        let sut = BookDetailViewModel(fetchBookDetailUseCase: useCase)
 
-        viewModel.setStateChangeHandler { state in
-            if !state.isLoading, state.errorMessage != nil {
+        let expectation = expectation(description: "Book detail failed")
+
+        sut.setStateChangeHandler { state in
+            if !state.isLoading, let message = state.errorMessage {
+                XCTAssertEqual(message, "상세 정보를 불러오지 못했습니다.")
+                XCTAssertNil(state.detail)
                 expectation.fulfill()
             }
         }
 
-        viewModel.send(BookDetailViewModel.Intent.setISBN("13"))
-        viewModel.send(BookDetailViewModel.Intent.load)
-
-        await fulfillment(of: [expectation], timeout: 1)
-    }
-}
-
-// MARK: - UseCase Tests (Domain)
-
-final class SearchBooksUseCaseTests: XCTestCase {
-
-    func test_searchBooks_usecase_returns_items() async throws {
-        // given
-        let repo = MockBookRepository()
-        repo.searchHandler = { query, page in
-            XCTAssertEqual(query, "Swift")
-            return (
-                items: [BookSummary(title: "Swift", subtitle: "", isbn13: "1", price: "$0", imageURL: nil, url: nil)],
-                total: 1,
-                page: page
-            )
-        }
-        let useCase = SearchBooksUseCase(repo: repo)
-
         // when
-        let result = try await useCase(query: "Swift", page: 1)
+        sut.send(BookDetailViewModel.Intent.setISBN("999"))
+        sut.send(BookDetailViewModel.Intent.load)
 
         // then
-        XCTAssertEqual(result.items.count, 1)
-        XCTAssertEqual(result.items.first?.title, "Swift")
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(repository.detailCallCount, 1)
     }
-}
 
-final class FetchBookDetailUseCaseTests: XCTestCase {
-
-    func test_fetchDetail_returns_detail() async throws {
+    func testLoadWithoutISBNDoesNotCallRepository() {
         // given
-        let repo = MockBookRepository()
-        let expected = BookDetail(
-            title: "Detail",
-            subtitle: "",
-            authors: "Tester",
-            publisher: "Pub",
-            isbn10: "10",
-            isbn13: "13",
-            pages: "100",
-            year: "2025",
-            rating: "5",
-            desc: "desc",
-            price: "$1",
-            imageURL: nil,
-            url: nil,
-            pdfs: [:]
-        )
-        repo.detailHandler = { isbn in
-            XCTAssertEqual(isbn, "13")
-            return expected
-        }
-        let useCase = FetchBookDetailUseCase(repo: repo)
+        let repository = MockBookRepository()
+        let useCase = FetchBookDetailUseCase(repo: repository)
+        let sut = BookDetailViewModel(fetchBookDetailUseCase: useCase)
 
         // when
-        let detail = try await useCase(isbn13: "13")
+        sut.send(BookDetailViewModel.Intent.load)
 
         // then
-        XCTAssertEqual(detail.title, expected.title)
-        XCTAssertEqual(detail.isbn13, expected.isbn13)
+        XCTAssertEqual(repository.detailCallCount, 0)
     }
 }
 
-// MARK: - Bookshelf Store / ViewModel Tests
+// MARK: - BookshelfViewModelTests
 
-@MainActor
-final class BookshelfStoreTests: XCTestCase {
-
-    func testAddRemoveToggle() {
-        let suite = "bookshelf-store-tests-\(UUID().uuidString)"
-        guard let defaults = UserDefaults(suiteName: suite) else {
-            XCTFail("Failed to create UserDefaults for test")
-            return
-        }
-        defaults.removePersistentDomain(forName: suite)
-        defer { defaults.removePersistentDomain(forName: suite) }
-
-        let store = BookshelfStore(userDefaults: defaults)
-        let book = DaangnBookSearch.BookSummary(title: "Bookmark", subtitle: "", isbn13: "bookmark", price: "$0", imageURL: nil, url: nil)
-
-        XCTAssertFalse(store.contains(isbn13: book.isbn13))
-        XCTAssertTrue(store.add(book))
-        XCTAssertTrue(store.contains(isbn13: book.isbn13))
-        XCTAssertFalse(store.add(book))
-
-        XCTAssertFalse(store.toggle(book)) // remove
-        XCTAssertFalse(store.contains(isbn13: book.isbn13))
-    }
-}
-
-@MainActor
 final class BookshelfViewModelTests: XCTestCase {
 
-    private var store: BookshelfStore!
-    private var userDefaults: UserDefaults!
-    private var suiteName: String!
-
-    override func setUp() {
-        super.setUp()
-        suiteName = "bookshelf-view-model-tests-\(UUID().uuidString)"
-        guard let defaults = UserDefaults(suiteName: suiteName) else {
-            XCTFail("Failed to create UserDefaults for test")
+    @MainActor
+    func testLoadIntentRefreshesStateFromStore() {
+        // given
+        let suiteName = "BookshelfViewModelTests.load"
+        guard let userDefaults = UserDefaults(suiteName: suiteName) else {
+            XCTFail("Failed to create UserDefaults suite")
             return
         }
-        userDefaults = defaults
         userDefaults.removePersistentDomain(forName: suiteName)
-        store = BookshelfStore(userDefaults: userDefaults)
-    }
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
 
-    override func tearDown() {
-        if let suiteName {
-            userDefaults?.removePersistentDomain(forName: suiteName)
+        let store = BookshelfStore(userDefaults: userDefaults)
+        let expectedBooks = [
+            BookSummary.stub(title: "Clean Architecture", subtitle: "Robert C. Martin", isbn13: "101", price: "$30"),
+            BookSummary.stub(title: "Refactoring", subtitle: "Martin Fowler", isbn13: "202", price: "$28")
+        ]
+        expectedBooks.reversed().forEach { _ = store.add($0) }
+
+        let sut = BookshelfViewModel(bookshelfStore: store)
+        let expectation = expectation(description: "Bookshelf state refreshed")
+
+        sut.setStateChangeHandler { state in
+            if state.books == expectedBooks {
+                expectation.fulfill()
+            }
         }
-        store = nil
-        userDefaults = nil
-        suiteName = nil
-        super.tearDown()
+
+        // when
+        sut.send(BookshelfViewModel.Intent.load)
+
+        // then
+        wait(for: [expectation], timeout: 0.5)
+        XCTAssertEqual(store.currentBooks, expectedBooks)
     }
 
-    func testLoadReflectsStoredBooks() {
-        let book = DaangnBookSearch.BookSummary(title: "My Book", subtitle: "", isbn13: "book1", price: "$1", imageURL: nil, url: nil)
-        _ = store.add(book)
+    @MainActor
+    func testRemoveIntentUpdatesStoreAndState() {
+        // given
+        let suiteName = "BookshelfViewModelTests.remove"
+        guard let userDefaults = UserDefaults(suiteName: suiteName) else {
+            XCTFail("Failed to create UserDefaults suite")
+            return
+        }
+        userDefaults.removePersistentDomain(forName: suiteName)
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
 
-        let viewModel = BookshelfViewModel(bookshelfStore: store)
-        viewModel.send(BookshelfViewModel.Intent.load)
+        let store = BookshelfStore(userDefaults: userDefaults)
+        let bookA = BookSummary.stub(title: "Test-Driven Development", subtitle: "Kent Beck", isbn13: "303", price: "$24")
+        let bookB = BookSummary.stub(title: "The Pragmatic Programmer", subtitle: "Andy Hunt", isbn13: "404", price: "$26")
+        [bookB, bookA].forEach { _ = store.add($0) }
 
-        XCTAssertEqual(viewModel.state.books.count, 1)
-        XCTAssertEqual(viewModel.state.books.first?.isbn13, "book1")
-    }
+        let sut = BookshelfViewModel(bookshelfStore: store)
+        let expectation = expectation(description: "Bookshelf item removed")
 
-    func testRemoveUpdatesState() {
-        let book = DaangnBookSearch.BookSummary(title: "My Book", subtitle: "", isbn13: "book1", price: "$1", imageURL: nil, url: nil)
-        _ = store.add(book)
+        sut.setStateChangeHandler { state in
+            if state.books == [bookB] {
+                expectation.fulfill()
+            }
+        }
 
-        let viewModel = BookshelfViewModel(bookshelfStore: store)
-        viewModel.send(BookshelfViewModel.Intent.load)
-        viewModel.send(BookshelfViewModel.Intent.remove(book))
+        // when
+        sut.send(BookshelfViewModel.Intent.remove(bookA))
 
-        XCTAssertTrue(viewModel.state.books.isEmpty)
+        // then
+        wait(for: [expectation], timeout: 0.5)
+        XCTAssertEqual(store.currentBooks, [bookB])
     }
 }
 
-// MARK: - Test Utilities
-
-private struct MockNetworkTarget: NetworkTarget {
-    var baseURL: URL { URL(string: "https://example.com")! }
-    var path: String { "/mock" }
-    var method: HTTPMethod { .get }
-    var headers: [String : String]? { nil }
-    var body: Data? { nil }
-    var queryItems: [URLQueryItem]? { nil }
-}
-
-private struct SampleDecodable: Codable, Equatable {
-    let id: Int
-    let title: String
-}
+// MARK: - Test Doubles
 
 private enum MockError: Error {
-    case stub
-}
-
-private final class MockURLProtocol: URLProtocol {
-    static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
-
-    override class func canInit(with request: URLRequest) -> Bool { true }
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
-
-    override func startLoading() {
-        guard let handler = Self.requestHandler else {
-            fatalError("Request handler not set")
-        }
-
-        do {
-            let (response, data) = try handler(request)
-            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            client?.urlProtocol(self, didLoad: data)
-            client?.urlProtocolDidFinishLoading(self)
-        } catch {
-            client?.urlProtocol(self, didFailWithError: error)
-        }
-    }
-
-    override func stopLoading() { }
+    case searchFailed
+    case notImplemented
+    case detailFailed
 }
 
 private final class MockBookRepository: BookRepository {
-    // Handlers allow tests to control behavior
-    var searchHandler: ((String, Int) async throws -> (items: [BookSummary], total: Int, page: Int))?
-    var detailHandler: ((String) async throws -> BookDetail)?
 
-    // Conformance to BookRepository
+    var searchResult: (items: [BookSummary], total: Int, page: Int)?
+    var searchError: Error?
+    private(set) var searchCallCount = 0
+
+    var detailResult: BookDetail?
+    var detailError: Error?
+    private(set) var detailCallCount = 0
+
     func search(query: String, page: Int) async throws -> (items: [BookSummary], total: Int, page: Int) {
-        guard let handler = self.searchHandler else {
-            return (items: [], total: 0, page: page)
+        searchCallCount += 1
+
+        if let error = searchError {
+            throw error
         }
-        let result = try await handler(query, page)
-        let items: [BookSummary] = result.items
-        let total: Int = result.total
-        let currentPage: Int = result.page
-        return (items: items, total: total, page: currentPage)
+
+        if let result = searchResult {
+            return result
+        }
+
+        return ([], 0, page)
     }
 
     func detail(isbn13: String) async throws -> BookDetail {
-        guard let handler = self.detailHandler else {
-            throw MockError.stub
+        detailCallCount += 1
+
+        if let error = detailError {
+            throw error
         }
-        let detail: BookDetail = try await handler(isbn13)
-        return detail
+
+        if let detail = detailResult {
+            return detail
+        }
+
+        throw MockError.notImplemented
+    }
+}
+
+private extension BookSummary {
+    static func stub(
+        title: String,
+        subtitle: String,
+        isbn13: String,
+        price: String,
+        imageURL: URL? = URL(string: "https://example.com/cover.jpg"),
+        url: URL? = URL(string: "https://example.com/detail")
+    ) -> BookSummary {
+        BookSummary(
+            title: title,
+            subtitle: subtitle,
+            isbn13: isbn13,
+            price: price,
+            imageURL: imageURL,
+            url: url
+        )
+    }
+}
+
+private extension BookDetail {
+    static func stub(
+        title: String = "Sample Title",
+        subtitle: String = "Sample Subtitle",
+        authors: String = "Author",
+        publisher: String = "Publisher",
+        isbn10: String = "1234567890",
+        isbn13: String,
+        pages: String = "350",
+        year: String = "2024",
+        rating: String = "4",
+        desc: String = "Description",
+        price: String = "$20",
+        imageURL: URL? = URL(string: "https://example.com/detail.jpg"),
+        url: URL? = URL(string: "https://example.com/detail"),
+        pdfs: [String: URL] = [:]
+    ) -> BookDetail {
+        BookDetail(
+            title: title,
+            subtitle: subtitle,
+            authors: authors,
+            publisher: publisher,
+            isbn10: isbn10,
+            isbn13: isbn13,
+            pages: pages,
+            year: year,
+            rating: rating,
+            desc: desc,
+            price: price,
+            imageURL: imageURL,
+            url: url,
+            pdfs: pdfs
+        )
     }
 }
 

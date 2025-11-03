@@ -6,10 +6,12 @@
 //
 
 import UIKit
+import Combine
 
 final class SearchViewController: UIViewController {
 
     private let viewModel: SearchViewModel
+    private let searchHistoryStore: SearchHistoryStore
     private let detailViewControllerBuilder: (BookSummary) -> UIViewController
     private var customView: SearchView {
         view as! SearchView
@@ -17,10 +19,18 @@ final class SearchViewController: UIViewController {
     private var currentState = SearchViewModel.State()
     private var previousErrorMessage: String?
     private var hasPerformedSearch = false
-    private var histories: [String] = SearchHistoryStore.shared.loadHistories()
+    private var histories: [String] = []
+    
+    /// Combine의 구독을 관리하는 Set
+    private var cancellables = Set<AnyCancellable>()
 
-    init(viewModel: SearchViewModel, detailViewControllerBuilder: @escaping (BookSummary) -> UIViewController) {
+    init(
+        viewModel: SearchViewModel,
+        searchHistoryStore: SearchHistoryStore,
+        detailViewControllerBuilder: @escaping (BookSummary) -> UIViewController
+    ) {
         self.viewModel = viewModel
+        self.searchHistoryStore = searchHistoryStore
         self.detailViewControllerBuilder = detailViewControllerBuilder
         super.init(nibName: nil, bundle: nil)
     }
@@ -40,14 +50,33 @@ final class SearchViewController: UIViewController {
         configureCollectionView()
         configureInputs()
         observeViewModel()
+        setupSearchHistorySubscription()
         renderHistoryVisibility()
         customView.historyDropdownCollectionView.reloadData()
+    }
+    
+    /// 검색 기록 Store의 Publisher를 구독하여 상태를 자동으로 업데이트
+    private func setupSearchHistorySubscription() {
+        Task {
+            let publisher = await searchHistoryStore.historiesPublisher
+            
+            publisher
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] histories in
+                    guard let self else { return }
+                    self.histories = histories
+                    self.renderHistoryVisibility()
+                    self.customView.historyDropdownCollectionView.reloadData()
+                }
+                .store(in: &cancellables)
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
-        viewModel.send(.refreshFavorites)
+        // 즐겨찾기 상태는 BookshelfStore의 Publisher 구독을 통해 자동으로 업데이트되므로
+        // 명시적인 refresh가 필요 없습니다
         customView.collectionView.reloadData()
     }
 
@@ -119,10 +148,9 @@ final class SearchViewController: UIViewController {
     
     @objc
     private func handleHistoryClearTap() {
-        SearchHistoryStore.shared.clear()
-        histories = []
-        renderHistoryVisibility()
-        customView.historyDropdownCollectionView.reloadData()
+        Task {
+            await searchHistoryStore.clear()
+        }
     }
 
     @objc
@@ -351,9 +379,8 @@ private extension SearchViewController {
         let text = (customView.queryTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
 
-        SearchHistoryStore.shared.addHistory(text)
-        histories = SearchHistoryStore.shared.loadHistories()
-        renderHistoryVisibility()
-        customView.historyDropdownCollectionView.reloadData()
+        Task {
+            await searchHistoryStore.addHistory(text)
+        }
     }
 }

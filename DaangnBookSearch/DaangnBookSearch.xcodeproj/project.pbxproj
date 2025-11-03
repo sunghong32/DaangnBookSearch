@@ -40,6 +40,7 @@
 		65325D5D2EB28788005F43AA /* Exceptions for "DaangnBookSearch" folder in "DaangnBookSearchTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Core/Support/BookshelfStore.swift,
 				Data/DTO/BookDetailDTO.swift,
 				Data/DTO/SearchBookDTO.swift,
 				Data/DTO/SearchResponseDTO.swift,
@@ -61,6 +62,7 @@
 		65325D5E2EB28788005F43AA /* Exceptions for "DaangnBookSearch" folder in "DaangnBookSearchUITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Core/Support/BookshelfStore.swift,
 				Data/DTO/BookDetailDTO.swift,
 				Data/DTO/SearchBookDTO.swift,
 				Data/DTO/SearchResponseDTO.swift,

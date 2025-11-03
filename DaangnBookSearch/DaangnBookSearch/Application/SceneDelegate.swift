@@ -22,28 +22,76 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         let splash = SplashViewController { [weak window] in
             guard let window else { return }
+            
+            // MARK: - Network & Repository 설정
             let provider = NetworkProvider()
             let bookNetworkRepository = BookNetworkRepository(provider: provider)
+            
+            // MARK: - UseCase 설정
             let searchBooksUseCase = SearchBooksUseCase(repo: bookNetworkRepository)
             let fetchBookDetailUseCase = FetchBookDetailUseCase(repo: bookNetworkRepository)
-            let bookshelfStore = BookshelfStore.shared
-            let viewModel = SearchViewModel(
+            
+            // MARK: - BookshelfStore 설정 (싱글톤 없이 인스턴스 생성)
+            // 여러 ViewModel에서 공유할 하나의 Store 인스턴스를 생성합니다
+            let bookshelfStore = BookshelfStore()
+            
+            // MARK: - SearchHistoryStore 설정
+            let searchHistoryStore = SearchHistoryStore()
+            
+            // MARK: - BookshelfRepository 설정
+            // 영구 저장을 위한 Repository 인스턴스 생성
+            let bookshelfRepository = BookshelfUserDefaultsRepository()
+            
+            // MARK: - Bookshelf 관련 UseCase 설정
+            let loadBookshelfUseCase = LoadBookshelfUseCase(
+                bookshelfStore: bookshelfStore,
+                repository: bookshelfRepository
+            )
+            
+            let toggleBookshelfUseCase = ToggleBookshelfUseCase(
+                bookshelfStore: bookshelfStore,
+                repository: bookshelfRepository
+            )
+            
+            // MARK: - 저장된 즐겨찾기 불러오기
+            // 앱 시작 시 저장된 즐겨찾기 데이터를 불러와 Store에 반영합니다
+            Task {
+                try? await loadBookshelfUseCase()
+            }
+            
+            // MARK: - ViewModel 설정
+            // 각 ViewModel에 동일한 Store 인스턴스를 주입합니다
+            // 이렇게 하면 ViewModel 간 의존성 없이 동일한 데이터를 공유할 수 있습니다
+            let searchViewModel = SearchViewModel(
                 searchBooksUseCase: searchBooksUseCase,
+                toggleBookshelfUseCase: toggleBookshelfUseCase,
                 bookshelfStore: bookshelfStore
             )
-            let bookshelfViewModel = BookshelfViewModel(bookshelfStore: bookshelfStore)
+            
+            let bookshelfViewModel = BookshelfViewModel(
+                bookshelfStore: bookshelfStore,
+                toggleBookshelfUseCase: toggleBookshelfUseCase
+            )
+            
+            // MARK: - Detail 화면 빌더
             let detailBuilder: (BookSummary) -> UIViewController = { summary in
-                let detailViewModel = BookDetailViewModel(fetchBookDetailUseCase: fetchBookDetailUseCase)
+                let detailViewModel = BookDetailViewModel(
+                    fetchBookDetailUseCase: fetchBookDetailUseCase
+                )
                 detailViewModel.send(.setISBN(summary.isbn13))
                 return BookDetailViewController(
                     viewModel: detailViewModel,
                     summary: summary,
-                    bookshelfStore: bookshelfStore
+                    bookshelfStore: bookshelfStore,
+                    toggleBookshelfUseCase: toggleBookshelfUseCase
                 )
             }
+            
+            // MARK: - MainTabBar 설정
             let mainTabBar = MainTabBarController(
-                searchViewModel: viewModel,
+                searchViewModel: searchViewModel,
                 bookshelfViewModel: bookshelfViewModel,
+                searchHistoryStore: searchHistoryStore,
                 detailViewControllerBuilder: detailBuilder
             )
             window.rootViewController = mainTabBar
