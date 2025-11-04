@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol BookRepository {
+public protocol BookRepository {
     /// memo: 검색어와 페이지로 목록 조회
     func search(
         query: String,

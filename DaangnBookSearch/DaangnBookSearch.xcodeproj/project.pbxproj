@@ -52,8 +52,11 @@
 				Domain/Entity/BookDetail.swift,
 				Domain/Entity/BookSummary.swift,
 				Domain/Repository/BookRepository.swift,
+				Domain/Repository/BookshelfRepository.swift,
 				Domain/UseCase/FetchBookDetailUseCase.swift,
+				Domain/UseCase/LoadBookshelfUseCase.swift,
 				Domain/UseCase/SearchBooksUseCase.swift,
+				Domain/UseCase/ToggleBookshelfUseCase.swift,
 				Presentation/Detail/ViewModel/BookDetailViewModel.swift,
 				Presentation/Search/ViewModel/SearchViewModel.swift,
 			);
@@ -74,8 +77,11 @@
 				Domain/Entity/BookDetail.swift,
 				Domain/Entity/BookSummary.swift,
 				Domain/Repository/BookRepository.swift,
+				Domain/Repository/BookshelfRepository.swift,
 				Domain/UseCase/FetchBookDetailUseCase.swift,
+				Domain/UseCase/LoadBookshelfUseCase.swift,
 				Domain/UseCase/SearchBooksUseCase.swift,
+				Domain/UseCase/ToggleBookshelfUseCase.swift,
 				Presentation/Detail/ViewModel/BookDetailViewModel.swift,
 				Presentation/Search/ViewModel/SearchViewModel.swift,
 			);

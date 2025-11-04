@@ -7,11 +7,15 @@
 
 import Foundation
 
-struct SearchBooksUseCase {
-    let bookRepository: BookRepository
+public struct SearchBooksUseCase {
+    private let bookRepository: BookRepository
+    
+    public init(bookRepository: BookRepository) {
+        self.bookRepository = bookRepository
+    }
 
     /// memo: 검색어와 페이지로 도서 목록 조회
-    func execute(
+    public func execute(
         query: String,
         page: Int
     ) async throws -> (items: [BookSummary], total: Int, page: Int) {

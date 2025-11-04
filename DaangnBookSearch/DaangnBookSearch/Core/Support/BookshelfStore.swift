@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 /// 즐겨찾기 데이터를 관리하는 Shared Store
-actor BookshelfStore {
+public actor BookshelfStore {
     
     // MARK: - Private Properties
     
@@ -18,53 +18,49 @@ actor BookshelfStore {
     // MARK: - Public Properties
     
     /// ViewModel이 구독할 읽기 전용 Publisher
-    var booksPublisher: AnyPublisher<[BookSummary], Never> {
+    public var booksPublisher: AnyPublisher<[BookSummary], Never> {
         booksSubject.eraseToAnyPublisher()
     }
     
     /// 현재 즐겨찾기 목록
-    var currentBooks: [BookSummary] {
+    public var currentBooks: [BookSummary] {
         booksSubject.value
     }
     
     /// 현재 즐겨찾기 ISBN Set (빠른 확인용)
-    var favoriteISBNs: Set<String> {
+    public var favoriteISBNs: Set<String> {
         Set(booksSubject.value.map { $0.isbn13 })
     }
     
     // MARK: - Initialization
     
-    init(initialBooks: [BookSummary] = []) {
+    public init(initialBooks: [BookSummary] = []) {
         self.booksSubject = CurrentValueSubject(initialBooks)
     }
     
     // MARK: - Internal Methods (UseCase에서만 호출)
     
     /// UseCase를 통해서만 호출
-    func add(_ book: BookSummary) -> Bool {
+    func add(_ book: BookSummary) {
         guard !favoriteISBNs.contains(book.isbn13) else {
-            return false
+            return
         }
         
         var updatedBooks = booksSubject.value
         updatedBooks.insert(book, at: 0)
         booksSubject.send(updatedBooks)
-        
-        return true
     }
     
     /// UseCase를 통해서만 호출
-    func remove(isbn13: String) -> Bool {
+    func remove(isbn13: String) {
         var updatedBooks = booksSubject.value
         
         guard let index = updatedBooks.firstIndex(where: { $0.isbn13 == isbn13 }) else {
-            return false
+            return
         }
         
         updatedBooks.remove(at: index)
         booksSubject.send(updatedBooks)
-        
-        return true
     }
     
     /// UseCase를 통해서만 호출

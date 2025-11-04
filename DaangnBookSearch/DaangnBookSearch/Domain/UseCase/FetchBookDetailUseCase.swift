@@ -7,11 +7,15 @@
 
 import Foundation
 
-struct FetchBookDetailUseCase {
-    let bookRepository: BookRepository
+public struct FetchBookDetailUseCase {
+    private let bookRepository: BookRepository
+    
+    public init(bookRepository: BookRepository) {
+        self.bookRepository = bookRepository
+    }
 
     /// memo: ISBN13 기반으로 상세 정보 요청
-    func execute(isbn13: String) async throws -> BookDetail {
+    public func execute(isbn13: String) async throws -> BookDetail {
         try await bookRepository.detail(isbn13: isbn13)
     }
 }

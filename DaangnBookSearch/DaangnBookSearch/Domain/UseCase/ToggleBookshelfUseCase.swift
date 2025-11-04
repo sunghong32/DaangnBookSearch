@@ -7,14 +7,19 @@
 
 import Foundation
 
-struct ToggleBookshelfUseCase {
+public struct ToggleBookshelfUseCase {
     
-    let bookshelfStore: BookshelfStore
-    let repository: BookshelfRepository
+    private let bookshelfStore: BookshelfStore
+    private let repository: BookshelfRepository
+    
+    public init(bookshelfStore: BookshelfStore, repository: BookshelfRepository) {
+        self.bookshelfStore = bookshelfStore
+        self.repository = repository
+    }
     
     /// memo: 즐겨찾기 토글 상태를 Store와 저장소에 동기화
     @discardableResult
-    func execute(book: BookSummary) async throws -> Bool {
+    public func execute(book: BookSummary) async throws -> Bool {
         let isFavorite = await bookshelfStore.toggle(book)
         
         // 영구 저장소에 저장
