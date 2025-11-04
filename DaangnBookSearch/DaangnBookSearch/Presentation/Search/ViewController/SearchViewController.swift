@@ -75,8 +75,8 @@ final class SearchViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
-        // 즐겨찾기 상태는 BookshelfStore의 Publisher 구독을 통해 자동으로 업데이트되므로
-        // 명시적인 refresh가 필요 없습니다
+        // 즐겨찾기 상태는 BookshelfStore Publisher 구독으로 자동 갱신되므로
+        // 명시적인 refresh가 필요 없음
         customView.collectionView.reloadData()
     }
 

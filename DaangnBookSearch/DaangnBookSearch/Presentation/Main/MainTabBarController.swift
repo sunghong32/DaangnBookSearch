@@ -62,8 +62,8 @@ final class MainTabBarController: UITabBarController {
         )
         let searchNavigation = UINavigationController(rootViewController: searchController)
         searchNavigation.tabBarItem = UITabBarItem(
-            title: "검색",
-            image: UIImage(named: "Magnifier20")?.withRenderingMode(.alwaysTemplate),
+            title: "책 검색",
+            image: UIImage(named: "Magnifier24")?.withRenderingMode(.alwaysTemplate),
             selectedImage: UIImage(named: "MagnifierOrange")?.withRenderingMode(.alwaysOriginal)
         )
 
@@ -75,7 +75,7 @@ final class MainTabBarController: UITabBarController {
         bookshelfNavigation.tabBarItem = UITabBarItem(
             title: "내 책장",
             image: UIImage(named: "EmptyHeart")?.withRenderingMode(.alwaysTemplate),
-            selectedImage: UIImage(named: "Heart17")?.withRenderingMode(.alwaysOriginal)
+            selectedImage: UIImage(named: "Heart24")?.withRenderingMode(.alwaysOriginal)
         )
 
         setViewControllers([searchNavigation, bookshelfNavigation], animated: false)

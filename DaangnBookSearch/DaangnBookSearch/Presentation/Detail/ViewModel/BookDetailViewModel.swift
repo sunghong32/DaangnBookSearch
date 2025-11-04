@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 final class BookDetailViewModel {
 
     struct State {
@@ -42,14 +43,13 @@ final class BookDetailViewModel {
         }
     }
 
-    @MainActor
     private func loadDetail(isbn13: String) async {
         mutateState {
             $0.isLoading = true
             $0.errorMessage = nil
         }
         do {
-            let detail = try await fetchBookDetailUseCase(isbn13: isbn13)
+            let detail = try await fetchBookDetailUseCase.execute(isbn13: isbn13)
             mutateState {
                 $0.detail = detail
                 $0.errorMessage = nil

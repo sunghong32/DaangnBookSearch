@@ -9,9 +9,9 @@ import Foundation
 import UIKit
 import Combine
 
-/// 책 상세 화면의 ViewController
+/// 책 상세 화면 ViewController
 ///
-/// BookshelfStore의 Publisher를 구독하여 즐겨찾기 상태 변화를 자동으로 반영합니다.
+/// BookshelfStore Publisher 구독으로 즐겨찾기 상태 자동 반영
 final class BookDetailViewController: UIViewController {
 
     private let viewModel: BookDetailViewModel
@@ -22,9 +22,9 @@ final class BookDetailViewController: UIViewController {
     private var isFavorite = false
     private var lastErrorMessage: String?
     
-    /// Combine의 구독을 관리하는 Set
+    /// Combine 구독 보관용 Set
     /// 
-    /// deinit 시 자동으로 구독이 취소되도록 저장합니다
+    /// deinit 시 자동 해제되도록 보관
     private var cancellables = Set<AnyCancellable>()
 
     private var detailView: BookDetailView { view as! BookDetailView }
@@ -83,7 +83,7 @@ final class BookDetailViewController: UIViewController {
 
     /// View와 ViewModel 간 바인딩 설정
     /// 
-    /// Store의 Publisher를 구독하여 즐겨찾기 상태 변화를 자동으로 반영합니다.
+    /// Store Publisher 구독으로 즐겨찾기 상태 자동 반영
     private func setupBindings() {
         detailView.onAddToShelfTap = { [weak self] in
             self?.toggleFavoriteState()
@@ -107,10 +107,10 @@ final class BookDetailViewController: UIViewController {
         setupFavoritesSubscription()
     }
     
-    /// 즐겨찾기 Store의 Publisher를 구독하여 상태를 자동으로 업데이트합니다
+    /// 즐겨찾기 Store Publisher 구독으로 상태 자동 갱신
     /// 
-    /// Store의 즐겨찾기 목록이 변경되면 현재 책의 즐겨찾기 상태를 자동으로 확인합니다.
-    /// 이렇게 하면 다른 화면에서 즐겨찾기를 변경해도 이 화면이 자동으로 반영됩니다.
+    /// Store 즐겨찾기 목록이 바뀌면 현재 책 즐겨찾기 상태를 즉시 확인
+    /// 다른 화면에서 즐겨찾기를 바꿔도 여기서 자동 반영
     private func setupFavoritesSubscription() {
         Task {
             // actor에서 Publisher 가져오기 (비동기)
@@ -127,7 +127,7 @@ final class BookDetailViewController: UIViewController {
         }
     }
 
-    /// ViewModel의 상태를 UI에 반영합니다
+    /// ViewModel 상태를 UI에 반영
     /// 
     /// - Parameter state: ViewModel의 현재 상태
     private func render(state: BookDetailViewModel.State) {
@@ -152,16 +152,16 @@ final class BookDetailViewController: UIViewController {
         }
     }
 
-    /// 즐겨찾기 상태를 토글합니다
+    /// 즐겨찾기 상태 토글
     /// 
-    /// UseCase를 통해 Store를 업데이트하며, Publisher가 자동으로 상태를 반영합니다.
+    /// UseCase로 Store 갱신, Publisher가 자동 상태 반영
     private func toggleFavoriteState() {
         guard let summary = currentSummary() else { return }
         
         Task {
             do {
                 // UseCase를 통해 즐겨찾기 토글 수행
-                let isNowFavorite = try await toggleBookshelfUseCase(book: summary)
+                let isNowFavorite = try await toggleBookshelfUseCase.execute(book: summary)
                 
                 // UI 업데이트
                 await MainActor.run {
@@ -201,11 +201,11 @@ final class BookDetailViewController: UIViewController {
         )
     }
 
-    /// 초기 책 정보로 화면을 미리 구성합니다
+    /// 초기 책 정보로 화면 사전 구성
     /// 
     /// - Parameter summary: 초기 표시할 책 정보
     /// 
-    /// 상세 정보가 로드되기 전에 미리 책 정보를 표시합니다.
+    /// 상세 정보 로드 전 기본 정보 표시
     private func preconfigure(with summary: BookSummary) {
         navigationItem.title = summary.title
         
@@ -268,10 +268,10 @@ final class BookDetailViewController: UIViewController {
         return nil
     }
 
-    /// Store의 즐겨찾기 상태와 UI 상태를 동기화합니다
+    /// Store 즐겨찾기 상태와 UI 상태 동기화
     /// 
-    /// Store의 Publisher가 변경을 감지하면 자동으로 호출됩니다.
-    /// 현재 책의 즐겨찾기 상태를 확인하여 UI를 업데이트합니다.
+    /// Store Publisher 변경 감지 시 자동 호출
+    /// 현재 책 즐겨찾기 상태를 확인해 UI 갱신
     private func syncFavoriteStateWithStore() {
         guard let isbn = currentSummary()?.isbn13 else { return }
         

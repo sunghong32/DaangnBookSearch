@@ -28,11 +28,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             let bookNetworkRepository = BookNetworkRepository(provider: provider)
             
             // MARK: - UseCase 설정
-            let searchBooksUseCase = SearchBooksUseCase(repo: bookNetworkRepository)
-            let fetchBookDetailUseCase = FetchBookDetailUseCase(repo: bookNetworkRepository)
+            let searchBooksUseCase = SearchBooksUseCase(bookRepository: bookNetworkRepository)
+            let fetchBookDetailUseCase = FetchBookDetailUseCase(bookRepository: bookNetworkRepository)
             
             // MARK: - BookshelfStore 설정 (싱글톤 없이 인스턴스 생성)
-            // 여러 ViewModel에서 공유할 하나의 Store 인스턴스를 생성합니다
+            // 여러 ViewModel에서 공유할 단일 Store 인스턴스 생성
             let bookshelfStore = BookshelfStore()
             
             // MARK: - SearchHistoryStore 설정
@@ -54,14 +54,14 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             )
             
             // MARK: - 저장된 즐겨찾기 불러오기
-            // 앱 시작 시 저장된 즐겨찾기 데이터를 불러와 Store에 반영합니다
+            // 앱 시작 시 저장된 즐겨찾기를 불러와 Store에 반영
             Task {
-                try? await loadBookshelfUseCase()
+                try? await loadBookshelfUseCase.execute()
             }
             
             // MARK: - ViewModel 설정
-            // 각 ViewModel에 동일한 Store 인스턴스를 주입합니다
-            // 이렇게 하면 ViewModel 간 의존성 없이 동일한 데이터를 공유할 수 있습니다
+            // 각 ViewModel에 동일한 Store 인스턴스 주입
+            // ViewModel 간 의존성 없이 동일 데이터 공유
             let searchViewModel = SearchViewModel(
                 searchBooksUseCase: searchBooksUseCase,
                 toggleBookshelfUseCase: toggleBookshelfUseCase,
@@ -104,7 +104,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
-        // 앱이 포그라운드에서 백그라운드로 전환될 때 호출됩니다.
-        // 필요한 경우 데이터를 저장하거나, 공유 리소스를 해제할 수 있습니다.
+        // 앱이 포그라운드에서 백그라운드로 전환될 때 호출됨
+        // 필요 시 데이터 저장 또는 공유 리소스 정리
     }
 }

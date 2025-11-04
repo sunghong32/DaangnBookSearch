@@ -7,12 +7,10 @@
 
 import Foundation
 
-/// 즐겨찾기 데이터의 영구 저장을 담당하는 Repository 프로토콜
-///
-/// Data 계층에서 구현 (UserDefaults, Core Data 등)
 protocol BookshelfRepository {
-    
+    /// memo: 저장된 즐겨찾기 로딩
     func loadBooks() async throws -> [BookSummary]
+    /// memo: 즐겨찾기 목록을 영구 저장
     func saveBooks(_ books: [BookSummary]) async throws
 }
 

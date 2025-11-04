@@ -20,6 +20,7 @@ final class BookshelfUserDefaultsRepository: BookshelfRepository {
         self.userDefaults = userDefaults
     }
     
+    /// memo: UserDefaults에서 즐겨찾기 JSON 로드
     func loadBooks() async throws -> [BookSummary] {
         guard let data = userDefaults.data(forKey: storageKey) else {
             return []
@@ -30,6 +31,7 @@ final class BookshelfUserDefaultsRepository: BookshelfRepository {
         return books
     }
     
+    /// memo: 즐겨찾기 목록을 JSON으로 직렬화해 저장
     func saveBooks(_ books: [BookSummary]) async throws {
         let encoder = JSONEncoder()
         let data = try encoder.encode(books)

@@ -7,16 +7,14 @@
 
 import Foundation
 
-/// 즐겨찾기 토글 기능을 수행하는 UseCase
-///
-/// ViewModel은 Store를 직접 변경하지 않고 이 UseCase를 통해서만 접근
-/// Store 업데이트 후 자동으로 영구 저장소에도 반영됨
 struct ToggleBookshelfUseCase {
     
     let bookshelfStore: BookshelfStore
     let repository: BookshelfRepository
     
-    func callAsFunction(book: BookSummary) async throws -> Bool {
+    /// memo: 즐겨찾기 토글 상태를 Store와 저장소에 동기화
+    @discardableResult
+    func execute(book: BookSummary) async throws -> Bool {
         let isFavorite = await bookshelfStore.toggle(book)
         
         // 영구 저장소에 저장

@@ -15,13 +15,13 @@ final class SearchViewModelTests: XCTestCase {
     @MainActor
     func testSearchSuccessUpdatesStateWithFetchedBooks() async throws {
         // given
-        let repository = MockBookRepository()
+        let bookRepository = MockBookRepository()
         let books = [
             BookSummary.stub(title: "Swift Concurrency", subtitle: "Modern Async Patterns", isbn13: "111", price: "$10"),
             BookSummary.stub(title: "iOS Unit Testing", subtitle: "XCTest in Practice", isbn13: "222", price: "$12")
         ]
-        repository.searchResult = (items: books, total: 2, page: 1)
-        let useCase = SearchBooksUseCase(repo: repository)
+        bookRepository.searchResult = (items: books, total: 2, page: 1)
+        let searchBooksUseCase = SearchBooksUseCase(bookRepository: bookRepository)
 
         let suiteName = "SearchViewModelTests.success"
         guard let userDefaults = UserDefaults(suiteName: suiteName) else {
@@ -31,12 +31,18 @@ final class SearchViewModelTests: XCTestCase {
         userDefaults.removePersistentDomain(forName: suiteName)
         defer { userDefaults.removePersistentDomain(forName: suiteName) }
 
-        let bookshelfStore = BookshelfStore(userDefaults: userDefaults)
-        let sut = SearchViewModel(searchBooksUseCase: useCase, bookshelfStore: bookshelfStore)
+        let bookshelfStore = BookshelfStore()
+        let bookshelfRepository = BookshelfUserDefaultsRepository(userDefaults: userDefaults)
+        let toggleBookshelfUseCase = ToggleBookshelfUseCase(bookshelfStore: bookshelfStore, repository: bookshelfRepository)
+        let searchViewModel = SearchViewModel(
+            searchBooksUseCase: searchBooksUseCase,
+            toggleBookshelfUseCase: toggleBookshelfUseCase,
+            bookshelfStore: bookshelfStore
+        )
 
         let expectation = expectation(description: "Search results delivered")
 
-        sut.setStateChangeHandler { state in
+        searchViewModel.setStateChangeHandler { state in
             if !state.isLoading, state.books == books {
                 XCTAssertEqual(state.page, 1)
                 XCTAssertEqual(state.total, 2)
@@ -46,20 +52,20 @@ final class SearchViewModelTests: XCTestCase {
         }
 
         // when
-        sut.send(SearchViewModel.Intent.updateQuery("Swift"))
-        sut.send(SearchViewModel.Intent.search)
+        searchViewModel.send(SearchViewModel.Intent.updateQuery("Swift"))
+        searchViewModel.send(SearchViewModel.Intent.search)
 
         // then
         await fulfillment(of: [expectation], timeout: 1.0)
-        XCTAssertEqual(repository.searchCallCount, 1)
+        XCTAssertEqual(bookRepository.searchCallCount, 1)
     }
 
     @MainActor
     func testSearchFailureSetsErrorMessage() async throws {
         // given
-        let repository = MockBookRepository()
-        repository.searchError = MockError.searchFailed
-        let useCase = SearchBooksUseCase(repo: repository)
+        let bookRepository = MockBookRepository()
+        bookRepository.searchError = MockError.searchFailed
+        let searchBooksUseCase = SearchBooksUseCase(bookRepository: bookRepository)
 
         let suiteName = "SearchViewModelTests.failure"
         guard let userDefaults = UserDefaults(suiteName: suiteName) else {
@@ -69,12 +75,18 @@ final class SearchViewModelTests: XCTestCase {
         userDefaults.removePersistentDomain(forName: suiteName)
         defer { userDefaults.removePersistentDomain(forName: suiteName) }
 
-        let bookshelfStore = BookshelfStore(userDefaults: userDefaults)
-        let sut = SearchViewModel(searchBooksUseCase: useCase, bookshelfStore: bookshelfStore)
+        let bookshelfStore = BookshelfStore()
+        let bookshelfRepository = BookshelfUserDefaultsRepository(userDefaults: userDefaults)
+        let toggleBookshelfUseCase = ToggleBookshelfUseCase(bookshelfStore: bookshelfStore, repository: bookshelfRepository)
+        let searchViewModel = SearchViewModel(
+            searchBooksUseCase: searchBooksUseCase,
+            toggleBookshelfUseCase: toggleBookshelfUseCase,
+            bookshelfStore: bookshelfStore
+        )
 
         let expectation = expectation(description: "Error state delivered")
 
-        sut.setStateChangeHandler { state in
+        searchViewModel.setStateChangeHandler { state in
             if !state.isLoading, let message = state.errorMessage {
                 XCTAssertEqual(message, "검색 결과를 불러오지 못했습니다.")
                 XCTAssertTrue(state.books.isEmpty)
@@ -83,19 +95,19 @@ final class SearchViewModelTests: XCTestCase {
         }
 
         // when
-        sut.send(SearchViewModel.Intent.updateQuery("Swift"))
-        sut.send(SearchViewModel.Intent.search)
+        searchViewModel.send(SearchViewModel.Intent.updateQuery("Swift"))
+        searchViewModel.send(SearchViewModel.Intent.search)
 
         // then
         await fulfillment(of: [expectation], timeout: 1.0)
-        XCTAssertEqual(repository.searchCallCount, 1)
+        XCTAssertEqual(bookRepository.searchCallCount, 1)
     }
 
     @MainActor
     func testSearchWithEmptyQueryDoesNotTriggerNetworkCall() {
         // given
-        let repository = MockBookRepository()
-        let useCase = SearchBooksUseCase(repo: repository)
+        let bookRepository = MockBookRepository()
+        let searchBooksUseCase = SearchBooksUseCase(bookRepository: bookRepository)
 
         let suiteName = "SearchViewModelTests.emptyQuery"
         guard let userDefaults = UserDefaults(suiteName: suiteName) else {
@@ -105,14 +117,20 @@ final class SearchViewModelTests: XCTestCase {
         userDefaults.removePersistentDomain(forName: suiteName)
         defer { userDefaults.removePersistentDomain(forName: suiteName) }
 
-        let bookshelfStore = BookshelfStore(userDefaults: userDefaults)
-        let sut = SearchViewModel(searchBooksUseCase: useCase, bookshelfStore: bookshelfStore)
+        let bookshelfStore = BookshelfStore()
+        let bookshelfRepository = BookshelfUserDefaultsRepository(userDefaults: userDefaults)
+        let toggleBookshelfUseCase = ToggleBookshelfUseCase(bookshelfStore: bookshelfStore, repository: bookshelfRepository)
+        let searchViewModel = SearchViewModel(
+            searchBooksUseCase: searchBooksUseCase,
+            toggleBookshelfUseCase: toggleBookshelfUseCase,
+            bookshelfStore: bookshelfStore
+        )
 
         // when
-        sut.send(SearchViewModel.Intent.search)
+        searchViewModel.send(SearchViewModel.Intent.search)
 
         // then
-        XCTAssertEqual(repository.searchCallCount, 0)
+        XCTAssertEqual(bookRepository.searchCallCount, 0)
     }
 }
 
@@ -123,15 +141,15 @@ final class BookDetailViewModelTests: XCTestCase {
     @MainActor
     func testLoadSuccessUpdatesDetailState() async {
         // given
-        let repository = MockBookRepository()
+        let bookRepository = MockBookRepository()
         let detail = BookDetail.stub(isbn13: "999")
-        repository.detailResult = detail
-        let useCase = FetchBookDetailUseCase(repo: repository)
-        let sut = BookDetailViewModel(fetchBookDetailUseCase: useCase)
+        bookRepository.detailResult = detail
+        let fetchBookDetailUseCase = FetchBookDetailUseCase(bookRepository: bookRepository)
+        let bookDetailViewModel = BookDetailViewModel(fetchBookDetailUseCase: fetchBookDetailUseCase)
 
         let expectation = expectation(description: "Book detail loaded")
 
-        sut.setStateChangeHandler { state in
+        bookDetailViewModel.setStateChangeHandler { state in
             if !state.isLoading, let loadedDetail = state.detail, loadedDetail.isbn13 == detail.isbn13 {
                 XCTAssertNil(state.errorMessage)
                 expectation.fulfill()
@@ -139,25 +157,25 @@ final class BookDetailViewModelTests: XCTestCase {
         }
 
         // when
-        sut.send(BookDetailViewModel.Intent.setISBN("999"))
-        sut.send(BookDetailViewModel.Intent.load)
+        bookDetailViewModel.send(BookDetailViewModel.Intent.setISBN("999"))
+        bookDetailViewModel.send(BookDetailViewModel.Intent.load)
 
         // then
         await fulfillment(of: [expectation], timeout: 1.0)
-        XCTAssertEqual(repository.detailCallCount, 1)
+        XCTAssertEqual(bookRepository.detailCallCount, 1)
     }
 
     @MainActor
     func testLoadFailureSetsErrorMessage() async {
         // given
-        let repository = MockBookRepository()
-        repository.detailError = MockError.detailFailed
-        let useCase = FetchBookDetailUseCase(repo: repository)
-        let sut = BookDetailViewModel(fetchBookDetailUseCase: useCase)
+        let bookRepository = MockBookRepository()
+        bookRepository.detailError = MockError.detailFailed
+        let fetchBookDetailUseCase = FetchBookDetailUseCase(bookRepository: bookRepository)
+        let bookDetailViewModel = BookDetailViewModel(fetchBookDetailUseCase: fetchBookDetailUseCase)
 
         let expectation = expectation(description: "Book detail failed")
 
-        sut.setStateChangeHandler { state in
+        bookDetailViewModel.setStateChangeHandler { state in
             if !state.isLoading, let message = state.errorMessage {
                 XCTAssertEqual(message, "상세 정보를 불러오지 못했습니다.")
                 XCTAssertNil(state.detail)
@@ -166,25 +184,25 @@ final class BookDetailViewModelTests: XCTestCase {
         }
 
         // when
-        sut.send(BookDetailViewModel.Intent.setISBN("999"))
-        sut.send(BookDetailViewModel.Intent.load)
+        bookDetailViewModel.send(BookDetailViewModel.Intent.setISBN("999"))
+        bookDetailViewModel.send(BookDetailViewModel.Intent.load)
 
         // then
         await fulfillment(of: [expectation], timeout: 1.0)
-        XCTAssertEqual(repository.detailCallCount, 1)
+        XCTAssertEqual(bookRepository.detailCallCount, 1)
     }
 
     func testLoadWithoutISBNDoesNotCallRepository() {
         // given
-        let repository = MockBookRepository()
-        let useCase = FetchBookDetailUseCase(repo: repository)
-        let sut = BookDetailViewModel(fetchBookDetailUseCase: useCase)
+        let bookRepository = MockBookRepository()
+        let fetchBookDetailUseCase = FetchBookDetailUseCase(bookRepository: bookRepository)
+        let bookDetailViewModel = BookDetailViewModel(fetchBookDetailUseCase: fetchBookDetailUseCase)
 
         // when
-        sut.send(BookDetailViewModel.Intent.load)
+        bookDetailViewModel.send(BookDetailViewModel.Intent.load)
 
         // then
-        XCTAssertEqual(repository.detailCallCount, 0)
+        XCTAssertEqual(bookRepository.detailCallCount, 0)
     }
 }
 
@@ -193,7 +211,7 @@ final class BookDetailViewModelTests: XCTestCase {
 final class BookshelfViewModelTests: XCTestCase {
 
     @MainActor
-    func testLoadIntentRefreshesStateFromStore() {
+    func testLoadIntentRefreshesStateFromStore() async {
         // given
         let suiteName = "BookshelfViewModelTests.load"
         guard let userDefaults = UserDefaults(suiteName: suiteName) else {
@@ -203,32 +221,38 @@ final class BookshelfViewModelTests: XCTestCase {
         userDefaults.removePersistentDomain(forName: suiteName)
         defer { userDefaults.removePersistentDomain(forName: suiteName) }
 
-        let store = BookshelfStore(userDefaults: userDefaults)
+        let bookshelfStore = BookshelfStore()
         let expectedBooks = [
             BookSummary.stub(title: "Clean Architecture", subtitle: "Robert C. Martin", isbn13: "101", price: "$30"),
             BookSummary.stub(title: "Refactoring", subtitle: "Martin Fowler", isbn13: "202", price: "$28")
         ]
-        expectedBooks.reversed().forEach { _ = store.add($0) }
+        await bookshelfStore.updateBooks(expectedBooks)
 
-        let sut = BookshelfViewModel(bookshelfStore: store)
+        let bookshelfRepository = BookshelfUserDefaultsRepository(userDefaults: userDefaults)
+        let toggleBookshelfUseCase = ToggleBookshelfUseCase(bookshelfStore: bookshelfStore, repository: bookshelfRepository)
+        let bookshelfViewModel = BookshelfViewModel(
+            bookshelfStore: bookshelfStore,
+            toggleBookshelfUseCase: toggleBookshelfUseCase
+        )
         let expectation = expectation(description: "Bookshelf state refreshed")
 
-        sut.setStateChangeHandler { state in
+        bookshelfViewModel.setStateChangeHandler { state in
             if state.books == expectedBooks {
                 expectation.fulfill()
             }
         }
 
         // when
-        sut.send(BookshelfViewModel.Intent.load)
+        bookshelfViewModel.send(BookshelfViewModel.Intent.load)
 
         // then
         wait(for: [expectation], timeout: 0.5)
-        XCTAssertEqual(store.currentBooks, expectedBooks)
+        let currentBooks = await bookshelfStore.currentBooks
+        XCTAssertEqual(currentBooks, expectedBooks)
     }
 
     @MainActor
-    func testRemoveIntentUpdatesStoreAndState() {
+    func testRemoveIntentUpdatesStoreAndState() async {
         // given
         let suiteName = "BookshelfViewModelTests.remove"
         guard let userDefaults = UserDefaults(suiteName: suiteName) else {
@@ -238,26 +262,32 @@ final class BookshelfViewModelTests: XCTestCase {
         userDefaults.removePersistentDomain(forName: suiteName)
         defer { userDefaults.removePersistentDomain(forName: suiteName) }
 
-        let store = BookshelfStore(userDefaults: userDefaults)
+        let bookshelfStore = BookshelfStore()
         let bookA = BookSummary.stub(title: "Test-Driven Development", subtitle: "Kent Beck", isbn13: "303", price: "$24")
         let bookB = BookSummary.stub(title: "The Pragmatic Programmer", subtitle: "Andy Hunt", isbn13: "404", price: "$26")
-        [bookB, bookA].forEach { _ = store.add($0) }
+        await bookshelfStore.updateBooks([bookA, bookB])
 
-        let sut = BookshelfViewModel(bookshelfStore: store)
+        let bookshelfRepository = BookshelfUserDefaultsRepository(userDefaults: userDefaults)
+        let toggleBookshelfUseCase = ToggleBookshelfUseCase(bookshelfStore: bookshelfStore, repository: bookshelfRepository)
+        let bookshelfViewModel = BookshelfViewModel(
+            bookshelfStore: bookshelfStore,
+            toggleBookshelfUseCase: toggleBookshelfUseCase
+        )
         let expectation = expectation(description: "Bookshelf item removed")
 
-        sut.setStateChangeHandler { state in
+        bookshelfViewModel.setStateChangeHandler { state in
             if state.books == [bookB] {
                 expectation.fulfill()
             }
         }
 
         // when
-        sut.send(BookshelfViewModel.Intent.remove(bookA))
+        bookshelfViewModel.send(BookshelfViewModel.Intent.remove(bookA))
 
         // then
         wait(for: [expectation], timeout: 0.5)
-        XCTAssertEqual(store.currentBooks, [bookB])
+        let currentBooks = await bookshelfStore.currentBooks
+        XCTAssertEqual(currentBooks, [bookB])
     }
 }
 

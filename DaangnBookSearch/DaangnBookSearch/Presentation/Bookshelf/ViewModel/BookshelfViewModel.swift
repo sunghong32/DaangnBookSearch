@@ -8,10 +8,10 @@
 import Foundation
 import Combine
 
-/// 내 책장 화면의 ViewModel
+/// 내 책장 화면 ViewModel
 ///
-/// MVI 패턴을 따르며, 즐겨찾기 목록을 표시하고 관리합니다.
-/// BookshelfStore의 Publisher를 구독하여 즐겨찾기 상태 변화를 자동으로 반영합니다.
+/// MVI 패턴 기반으로 즐겨찾기 목록 표시와 관리 담당
+/// BookshelfStore Publisher 구독으로 즐겨찾기 상태 자동 반영
 @MainActor
 final class BookshelfViewModel {
 
@@ -29,9 +29,9 @@ final class BookshelfViewModel {
     private(set) var state = State()
     private var stateChangeHandler: ((State) -> Void)?
     
-    /// Combine의 구독을 관리하는 Set
+    /// Combine 구독 보관용 Set
     /// 
-    /// deinit 시 자동으로 구독이 취소되도록 저장합니다
+    /// deinit 시 자동 해제되도록 보관
     private var cancellables = Set<AnyCancellable>()
 
     /// 초기화
@@ -40,7 +40,7 @@ final class BookshelfViewModel {
     ///   - bookshelfStore: 즐겨찾기 데이터를 관리하는 Store
     ///   - toggleBookshelfUseCase: 즐겨찾기 토글을 수행하는 UseCase
     /// 
-    /// Store의 Publisher를 구독하여 즐겨찾기 상태 변화를 자동으로 반영합니다.
+    /// Store Publisher 구독으로 즐겨찾기 상태 자동 반영
     init(
         bookshelfStore: BookshelfStore,
         toggleBookshelfUseCase: ToggleBookshelfUseCase
@@ -52,10 +52,10 @@ final class BookshelfViewModel {
         setupFavoritesSubscription()
     }
     
-    /// 즐겨찾기 Store의 Publisher를 구독하여 상태를 자동으로 업데이트합니다
+    /// 즐겨찾기 Store Publisher 구독으로 상태 자동 갱신
     /// 
-    /// Store의 즐겨찾기 목록이 변경되면 자동으로 books를 업데이트합니다.
-    /// 이렇게 하면 다른 화면에서 즐겨찾기를 변경해도 이 화면이 자동으로 반영됩니다.
+    /// Store 즐겨찾기 목록이 바뀌면 books 즉시 동기화
+    /// 다른 화면에서 즐겨찾기를 바꿔도 여기서 자동 반영
     private func setupFavoritesSubscription() {
         Task {
             // actor에서 Publisher 가져오기 (비동기)
@@ -78,17 +78,17 @@ final class BookshelfViewModel {
         stateChangeHandler = handler
     }
 
-    /// Intent를 처리하여 상태를 변경합니다
+    /// Intent를 처리해 상태 변경 수행
     /// 
     /// - Parameter intent: 처리할 Intent
     /// 
-    /// MVI 패턴에서 사용자가 발생시킨 액션을 Intent로 받아서 처리합니다.
+    /// MVI에서 사용자 액션을 Intent로 받아 처리
     func send(_ intent: Intent) {
         switch intent {
         case .load:
-            // Store의 Publisher가 자동으로 상태를 업데이트하므로
-            // 명시적인 로드가 필요 없습니다
-            // 필요시 초기 상태만 설정할 수 있습니다
+            // Store Publisher가 상태를 자동 갱신하므로
+            // 명시적인 로드는 생략
+            // 필요 시 초기 상태만 동기화
             Task {
                 let currentBooks = await bookshelfStore.currentBooks
                 mutateState { state in
@@ -100,26 +100,25 @@ final class BookshelfViewModel {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 
-                // 이미 즐겨찾기에 있는 경우에만 제거 (UseCase를 통해)
+                // 이미 즐겨찾기에 있는 경우에만 제거 (UseCase 활용)
                 do {
                     let currentBooks = await self.bookshelfStore.currentBooks
                     if currentBooks.contains(where: { $0.isbn13 == book.isbn13 }) {
-                        // UseCase를 통해 제거 (토글 사용)
-                        _ = try await self.toggleBookshelfUseCase(book: book)
+                        // UseCase로 제거 (토글 사용)
+                        try await self.toggleBookshelfUseCase.execute(book: book)
                         
-                        // Store의 Publisher가 자동으로 상태를 업데이트하므로
-                        // 여기서는 별도로 상태 변경이 필요 없습니다
+                        // Store Publisher가 자동으로 상태를 갱신하므로
+                        // 여기서는 상태 변경을 따로 수행하지 않음
                     }
                 } catch {
-                    // 에러 처리 (필요한 경우)
-                    // Publisher 구독이 자동으로 상태를 업데이트하므로
-                    // 에러가 발생해도 상태는 유지됩니다
+                    // 에러 처리 (필요 시)
+                    // Publisher 구독이 자동으로 상태를 갱신하므로
+                    // 에러 발생 시에도 상태 유지
                 }
             }
         }
     }
 
-    @MainActor
     private func mutateState(_ mutation: (inout State) -> Void) {
         mutation(&state)
         stateChangeHandler?(state)
