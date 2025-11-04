@@ -40,6 +40,7 @@
 		65325D5D2EB28788005F43AA /* Exceptions for "DaangnBookSearch" folder in "DaangnBookSearchTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Core/Support/BookshelfStore.swift,
 				Data/DTO/BookDetailDTO.swift,
 				Data/DTO/SearchBookDTO.swift,
 				Data/DTO/SearchResponseDTO.swift,
@@ -51,8 +52,11 @@
 				Domain/Entity/BookDetail.swift,
 				Domain/Entity/BookSummary.swift,
 				Domain/Repository/BookRepository.swift,
+				Domain/Repository/BookshelfRepository.swift,
 				Domain/UseCase/FetchBookDetailUseCase.swift,
+				Domain/UseCase/LoadBookshelfUseCase.swift,
 				Domain/UseCase/SearchBooksUseCase.swift,
+				Domain/UseCase/ToggleBookshelfUseCase.swift,
 				Presentation/Detail/ViewModel/BookDetailViewModel.swift,
 				Presentation/Search/ViewModel/SearchViewModel.swift,
 			);
@@ -61,6 +65,7 @@
 		65325D5E2EB28788005F43AA /* Exceptions for "DaangnBookSearch" folder in "DaangnBookSearchUITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Core/Support/BookshelfStore.swift,
 				Data/DTO/BookDetailDTO.swift,
 				Data/DTO/SearchBookDTO.swift,
 				Data/DTO/SearchResponseDTO.swift,
@@ -72,8 +77,11 @@
 				Domain/Entity/BookDetail.swift,
 				Domain/Entity/BookSummary.swift,
 				Domain/Repository/BookRepository.swift,
+				Domain/Repository/BookshelfRepository.swift,
 				Domain/UseCase/FetchBookDetailUseCase.swift,
+				Domain/UseCase/LoadBookshelfUseCase.swift,
 				Domain/UseCase/SearchBooksUseCase.swift,
+				Domain/UseCase/ToggleBookshelfUseCase.swift,
 				Presentation/Detail/ViewModel/BookDetailViewModel.swift,
 				Presentation/Search/ViewModel/SearchViewModel.swift,
 			);

@@ -143,7 +143,7 @@ final class BookDetailView: UIView {
         var config = UIButton.Configuration.filled()
         config.baseBackgroundColor = .clear
         config.baseForegroundColor = .daangnOrange
-        config.image = UIImage(named: "EmptyHeart")?.withRenderingMode(.alwaysTemplate)
+        config.image = UIImage(named: "Heart17")?.withRenderingMode(.alwaysTemplate)
         config.imagePadding = 6
         config.imagePlacement = .leading
         config.attributedTitle = AttributedString("내 책장에 담기", attributes: .init([.font: UIFont.daangnButton()]))
@@ -427,7 +427,7 @@ final class BookDetailView: UIView {
         config.baseForegroundColor = isFavorite ? .white : .daangnOrange
         config.image = isFavorite
             ? UIImage(named: "HeartWhite")?.withRenderingMode(.alwaysOriginal)
-            : UIImage(named: "EmptyHeart")?.withRenderingMode(.alwaysTemplate)
+            : UIImage(named: "Heart17")?.withRenderingMode(.alwaysTemplate)
         config.imagePadding = 6
         config.imagePlacement = .leading
         config.attributedTitle = AttributedString(

@@ -6,73 +6,81 @@
 //
 
 import Foundation
+import Combine
 
-final class BookshelfStore {
-
-    static let shared = BookshelfStore()
-
-    private let userDefaults: UserDefaults
-    private let storageKey = "bookshelf.items"
-    private var storedBooks: [BookSummary] {
-        didSet {
-            persist()
+/// 즐겨찾기 데이터를 관리하는 Shared Store
+public actor BookshelfStore {
+    
+    // MARK: - Private Properties
+    
+    private let booksSubject: CurrentValueSubject<[BookSummary], Never>
+    
+    // MARK: - Public Properties
+    
+    /// ViewModel이 구독할 읽기 전용 Publisher
+    public var booksPublisher: AnyPublisher<[BookSummary], Never> {
+        booksSubject.eraseToAnyPublisher()
+    }
+    
+    /// 현재 즐겨찾기 목록
+    public var currentBooks: [BookSummary] {
+        booksSubject.value
+    }
+    
+    /// 현재 즐겨찾기 ISBN Set (빠른 확인용)
+    public var favoriteISBNs: Set<String> {
+        Set(booksSubject.value.map { $0.isbn13 })
+    }
+    
+    // MARK: - Initialization
+    
+    public init(initialBooks: [BookSummary] = []) {
+        self.booksSubject = CurrentValueSubject(initialBooks)
+    }
+    
+    // MARK: - Internal Methods (UseCase에서만 호출)
+    
+    /// UseCase를 통해서만 호출
+    func add(_ book: BookSummary) {
+        guard !favoriteISBNs.contains(book.isbn13) else {
+            return
         }
+        
+        var updatedBooks = booksSubject.value
+        updatedBooks.insert(book, at: 0)
+        booksSubject.send(updatedBooks)
     }
-
-    var currentBooks: [BookSummary] {
-        storedBooks
-    }
-
-    // MARK: - Init
-
-    init(userDefaults: UserDefaults = .standard) {
-        self.userDefaults = userDefaults
-        if
-            let data = userDefaults.data(forKey: storageKey),
-            let decoded = try? JSONDecoder().decode([BookSummary].self, from: data)
-        {
-            storedBooks = decoded
-        } else {
-            storedBooks = []
+    
+    /// UseCase를 통해서만 호출
+    func remove(isbn13: String) {
+        var updatedBooks = booksSubject.value
+        
+        guard let index = updatedBooks.firstIndex(where: { $0.isbn13 == isbn13 }) else {
+            return
         }
+        
+        updatedBooks.remove(at: index)
+        booksSubject.send(updatedBooks)
     }
-
-    // MARK: - Public API
-
-    func contains(isbn13: String) -> Bool {
-        storedBooks.contains { $0.isbn13 == isbn13 }
-    }
-
-    @discardableResult
-    func add(_ book: BookSummary) -> Bool {
-        guard contains(isbn13: book.isbn13) == false else { return false }
-        storedBooks.insert(book, at: 0)
-        return true
-    }
-
-    @discardableResult
-    func remove(isbn13: String) -> Bool {
-        guard let index = storedBooks.firstIndex(where: { $0.isbn13 == isbn13 }) else { return false }
-        storedBooks.remove(at: index)
-        return true
-    }
-
-    @discardableResult
+    
+    /// UseCase를 통해서만 호출
     func toggle(_ book: BookSummary) -> Bool {
-        if remove(isbn13: book.isbn13) {
+        if favoriteISBNs.contains(book.isbn13) {
+            remove(isbn13: book.isbn13)
             return false
         } else {
             add(book)
             return true
         }
     }
-
-    // MARK: - Private
-
-    private func persist() {
-        guard let data = try? JSONEncoder().encode(storedBooks) else { return }
-        userDefaults.set(data, forKey: storageKey)
+    
+    /// UseCase를 통해서만 호출
+    func updateBooks(_ books: [BookSummary]) {
+        booksSubject.send(books)
+    }
+    
+    /// ISBN으로 즐겨찾기 여부 확인
+    func contains(isbn13: String) -> Bool {
+        favoriteISBNs.contains(isbn13)
     }
 }
-
-
